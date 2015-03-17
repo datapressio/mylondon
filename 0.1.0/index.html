@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>MyLondon</title>
+    <!--[if lt IE 10]>
+    <script src="bower_components/html5shiv/dist/html5shiv.min.js"></script>
+    <script src="bower_components/es5-shim/es5-shim.min.js"></script>
+    <script src="bower_components/es5-shim/es5-sham.min.js"></script>
+    <script src="bower_components/console-polyfill/index.js"></script>
+    <![endif]-->
     <style>
     body {
       width: 95%;
@@ -27,14 +33,14 @@
       font-size: 100%;
     }
     </style>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+
   </head>
   <body>
-    <h2>Versions</h2>
-    <ul>
-      <li><a href="0.1.0/index.html">Single LSOA</a></li>
-      <li><a href="0.1.2/index.html">Budget slider, multiple LSOAs, colour rank, popup</a></li>
-      <li><a href="0.1.4/index.html">Drag and drop priority re-ordering</a></li>
-    </ul>
+    <div id="App"></div>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+    <script src="build/main.js"></script>
   </body>
 </html>
 
