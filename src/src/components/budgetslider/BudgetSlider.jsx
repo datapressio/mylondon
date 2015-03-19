@@ -2,7 +2,8 @@ var React = require('react');
 var Router = require('react-router');
 var Slider = require('../slider/Slider');
 
-import merge from 'react/lib/merge';
+var objectAssign = require('react/lib/Object.assign');
+
 
 require('./budgetslider.css');
 
@@ -11,7 +12,7 @@ var BudgetSlider = React.createClass({
     mixins: [ Router.Navigation, Router.State ],
   
     didChange: function(value) {
-        var query = merge(this.getQuery(), {budget: value})
+        var query = objectAssign({}, this.getQuery(), {budget: value});
         this.replaceWith('map', {area: 'warren road'}, query);
     },
   

@@ -9,14 +9,17 @@ tar zxfv node-v0.10.33-linux-x64.tar.gz
 export PATH=$PATH:node-v0.10.33-linux-x64/bin/
 ~~~
 
-Build the NPM dependencies:
+Build the NPM dependencies and fetch the data:
 
 ~~~
 npm install
 npm install bower
 ./node_modules/bower/bin/bower install
+./fetch.sh
 npm run build
 ~~~
+
+Then open `index.html`
 
 Dev Mode
 --------

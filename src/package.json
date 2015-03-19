@@ -13,9 +13,12 @@
     "6to5": "^3.5.3",
     "6to5-core": "^3.5.3",
     "6to5-loader": "^3.0.0",
+    "font-awesome-webpack": "x.x.x",
     "react-hot-loader": "^1.1.4",
     "style-loader": "x.x.x",
     "json-loader": "x.x.x",
+    "file-loader": "x.x.x",
+    "url-loader": "x.x.x",
     "jquery": "x.x.x",
     "css-loader": "x.x.x"
   },

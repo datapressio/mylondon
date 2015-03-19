@@ -12,8 +12,8 @@ module.exports = {
   module: {
     loaders: [
       { test: /\.css$/, loader: 'style-loader!css-loader' },
-      // Pass *.jsx files through jsx-loader transform
-      // { test: /\.jsx$/, loader: 'jsx-loader?harmony' },
+      { test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "url-loader?limit=10000&minetype=application/font-woff" },
+      { test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "file-loader" },
       { test: /\.jsx$/, loaders: ['react-hot-loader', '6to5?experimental'], exclude: /node_modules/ },
       { test: /\.js$/, loaders: ['react-hot-loader', '6to5?experimental'], exclude: /node_modules/ },
       { test: /\.json$/, loaders: ['json'], exclude: /node_modules/ }

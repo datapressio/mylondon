@@ -32,7 +32,7 @@ var Map = React.createClass({
         windowWidth: window.innerWidth,
         windowHeight: window.innerHeight,
     })
-    this.state.map.on('click', this.onMapClick);
+    map.on('click', this.onMapClick);
     window.addEventListener("resize", this.handleResize);
   },
 
@@ -73,7 +73,7 @@ var Map = React.createClass({
                     stroke: false,
                     fillOpacity: (0.5 + lsoa_rank.rank/3),
                 });
-                if (this.props.budget > lsoa_data.rent && !this.state.map.hasLayer(lsoa_layer)) {
+                if (this.props.budget >= lsoa_data.rent && !this.state.map.hasLayer(lsoa_layer)) {
                     console.log('Adding layer');
                     this.state.map.addLayer(lsoa_layer);
                 } else if (this.props.budget < lsoa_data.rent && this.state.map.hasLayer(lsoa_layer)) {

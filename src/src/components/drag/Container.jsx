@@ -3,8 +3,9 @@
 import React from 'react';
 var Router = require('react-router');
 import update from 'react/lib/update';
-import merge from 'react/lib/merge';
 import Card from './Card';
+
+var objectAssign = require('react/lib/Object.assign');
 
 const Container = React.createClass({
   mixins: [Router.Navigation,  Router.State],
@@ -34,7 +35,7 @@ const Container = React.createClass({
         card_order.push(state.cards[i].id);
     }
     var priority = card_order.join();
-    var query = merge(this.getQuery(), {priority: priority})
+    var query = objectAssign({}, this.getQuery(), {priority: priority});
     // console.log("cards: ", cards, 'new_cards', state.cards, 'state cards: ', this.state.cards, 'query:', query);
     this.replaceWith('map', {area: 'warren road'}, query);
     this.setState(state);

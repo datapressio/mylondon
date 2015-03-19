@@ -14,7 +14,7 @@ var raw_data = {
     ],
     data: {
         'E01004376': {
-            geometry: require('../../../UK-GeoJSON/json/statistical/eng/oa_by_lsoa/E01004376.json'),
+            geometry: require('../oa_by_lsoa/E01004376.json'),
             rent: 450,
             crime: 0,
             transport: max,
@@ -22,7 +22,7 @@ var raw_data = {
             schools: 0,
         },
         'E01004375': {
-            geometry: require('../../../UK-GeoJSON/json/statistical/eng/oa_by_lsoa/E01004375.json'),
+            geometry: require('../oa_by_lsoa/E01004375.json'),
             rent: 350,
             crime:       0.2,
             transport:   max,
@@ -30,7 +30,7 @@ var raw_data = {
             schools:     0.1,
         },
         'E01004374': {
-            geometry: require('../../../UK-GeoJSON/json/statistical/eng/oa_by_lsoa/E01004374.json'),
+            geometry: require('../oa_by_lsoa/E01004374.json'),
             rent: 250,
             crime:       0.1,
             transport:   0.1,
@@ -38,7 +38,7 @@ var raw_data = {
             schools:     0.2,
         },
         'E01004373': {
-            geometry: require('../../../UK-GeoJSON/json/statistical/eng/oa_by_lsoa/E01004373.json'),
+            geometry: require('../oa_by_lsoa/E01004373.json'),
             rent:    200,
             crime:       max,
             transport:   0,
@@ -46,7 +46,7 @@ var raw_data = {
             schools:     0.3,
         },
         'E01004372': {
-            geometry: require('../../../UK-GeoJSON/json/statistical/eng/oa_by_lsoa/E01004372.json'),
+            geometry: require('../oa_by_lsoa/E01004372.json'),
             rent: 200,
             crime:       0,
             transport:   0,
@@ -54,7 +54,7 @@ var raw_data = {
             schools:     max,
         },
         'E01004371': {
-            geometry: require('../../../UK-GeoJSON/json/statistical/eng/oa_by_lsoa/E01004371.json'),
+            geometry: require('../oa_by_lsoa/E01004371.json'),
             rent: 150,
             crime:       0.2,
             transport:   0,

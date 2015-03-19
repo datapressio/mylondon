@@ -46,6 +46,8 @@ var BudgetSlider = require('./components/budgetslider/BudgetSlider');
 
 
 require('./index.css')
+require("font-awesome-webpack");
+
 
 
 var Data = React.createClass({
@@ -84,7 +86,7 @@ var Data = React.createClass({
                 var layer = layers[lsoa_name];
 
                 var popupContent = "<p>Rent: &pound" + lsoa.rent + " per week</p>"
-                popupContent += "<p>" + new Date();
+                popupContent += "<p>";
                 popupContent += "Crime Rating: " + this.rank_to_text((1 - lsoa.crime)/max) + "<br />";
                 popupContent += "Transport: "    + this.rank_to_text(lsoa.transport/max)   + "<br />";
                 popupContent += "Green Space: "  + this.rank_to_text(lsoa.green_space/max) + "<br />";
@@ -142,7 +144,7 @@ var Data = React.createClass({
 
   render() {
     var showModal = this.getQuery().oa || null;
-    var budget = parseInt(this.getQuery().budget || 500);
+    var budget = parseInt(this.getQuery().budget || 450);
     // console.log(this.getQuery().priority);
     var card_order = (this.getQuery().priority || '1,2,3,4').split(',')
     var cards = [];
@@ -198,6 +200,12 @@ var Main = React.createClass({
         }
     },
 
+    onSearch(e) {
+        e.preventDefault();
+        alert('Only warren road is supported in this demo');
+        this.transitionTo('map', {area: 'warren road'}, {});
+    },
+
     render() {
         var area = this.getParams().area;
         return (
@@ -217,7 +225,7 @@ var Main = React.createClass({
                 <Col md={3} style={{zIndex: 2, background: '#ffffff'}}>
                     <br />
                     <form onSubmit={this.onSearch}>
-                        <Input type='search' placeholder='Search' defaultValue={area} />
+                        <Input type='search' placeholder='Search' value={area} onChange={this.onSearch} />
                     </form>
                     {this.renderModal(<MyModal backdrop={true} onRequestHide={function(){
                         this.transitionTo('map', {area: 'warren road'}, {oa: null});
@@ -292,34 +300,40 @@ var MyModal = React.createClass({
 var App = React.createClass({
     mixins: [ Router.Navigation, Router.State ],
 
-    onSearch(e) {
-        e.preventDefault();
-        this.transitionTo('map', {area: 'warren road'}, {});
-        //this.transitionTo('/area/warren road');
-    },
 
     render() {
-        return (
-            <div id="main">
-                <Grid>
-                    <RouteHandler/>
-                </Grid>
-                {/*
-                // <Surface
-                //     width={700}
-                //     height={700}
-                // >
-                //     <Circle
-                //         radius={100}
-                //         stroke="green"
-                //         strokeWidth={3}
-                //         fill="blue"
-                //         transform={new Transform().translate(84.000000, 89.000000)}
-                //     />
-                // </Surface>
-                */}
-            </div>
-        );
+        var area = this.getParams().area;
+        if (area) { 
+            return (
+                <div id="main">
+                    <Grid>
+                        <RouteHandler/>
+                    </Grid>
+                    {/*
+                    // <Surface
+                    //     width={700}
+                    //     height={700}
+                    // >
+                    //     <Circle
+                    //         radius={100}
+                    //         stroke="green"
+                    //         strokeWidth={3}
+                    //         fill="blue"
+                    //         transform={new Transform().translate(84.000000, 89.000000)}
+                    //     />
+                    // </Surface>
+                    */}
+                </div>
+            );
+        } else {
+            return (
+                <div id="main">
+                    <Grid>
+                        <Link to="map" params={{area: "Warren Road"}}>Warren Road</Link>
+                    </Grid>
+                </div>
+            )
+        }
     }
 });
 
