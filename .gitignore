@@ -6,3 +6,6 @@ npm-debug.log
 **.DS_Store
 src/npm-debug.log
 tmp
+src/geo/
+src/http/
+src/oa_by_lsoa/
