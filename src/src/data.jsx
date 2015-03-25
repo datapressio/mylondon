@@ -66,25 +66,26 @@ var raw_data = {
        	1: {
             id: 1,
             text: 'Public Transport',
+            name: 'transport',
             icon: 'fa-subway',
         },
         2: {
             id: 2,
             text: 'Green Space',
+            name: 'green_space',
             icon: 'fa-tree',
-            // value: 'best 20%'
         }, 
         3: {
             id: 3,
             text: 'Crime/Safety',
             icon: 'fa-gavel',
-            // value: 'average'
+            name: 'crime',
         }, 
         4: {
             id: 4,
             text: 'Schools',
             icon: 'fa-graduation-cap',
-            // value: 'above average'
+            name: 'schools',
         }
     },
 }

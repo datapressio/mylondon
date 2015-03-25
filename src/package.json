@@ -13,7 +13,6 @@
     "6to5": "^3.5.3",
     "6to5-core": "^3.5.3",
     "6to5-loader": "^3.0.0",
-    "font-awesome-webpack": "x.x.x",
     "react-hot-loader": "^1.1.4",
     "style-loader": "x.x.x",
     "json-loader": "x.x.x",
@@ -27,6 +26,9 @@
     "react-bootstrap": "x.x.x",
     "react-bootstrap-slider": "x.x.x",
     "bootstrap-slider": "4.5.2",
-    "react-dnd": "x.x.x"
+    "react-dnd": "x.x.x",
+    "es6-promise": "^1.0.0",
+    "superagent": "^0.18.2",
+    "underscore": "1.6.0"
   }
 }
