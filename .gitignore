@@ -9,3 +9,7 @@ tmp
 src/geo/
 src/http/
 src/oa_by_lsoa/
+src/__pycache__/
+src/data.db
+src/env/
+src/env3/

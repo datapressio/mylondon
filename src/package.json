@@ -1,6 +1,6 @@
 {
   "name": "mylondon_demo",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "scripts": {
     "build": "./node_modules/.bin/webpack --optimize-minimize --optimize-dedupe",
@@ -8,12 +8,12 @@
   },
   "devDependencies": {
     "jsx-loader": "0.x.x",
-    "react": "0.12.x",
+    "react": "0.13.x",
     "webpack": "1.x.x",
-    "6to5": "^3.5.3",
-    "6to5-core": "^3.5.3",
-    "6to5-loader": "^3.0.0",
-    "react-hot-loader": "^1.1.4",
+    "babel": "x.x.x",
+    "babel-core": "x.x.x",
+    "babel-loader": "x.x.x",
+    "react-hot-loader": "x.x.x",
     "style-loader": "x.x.x",
     "json-loader": "x.x.x",
     "file-loader": "x.x.x",
@@ -22,13 +22,14 @@
     "css-loader": "x.x.x"
   },
   "dependencies": {
+    "bootstrap-slider": "4.5.2",
+    "es6-promise": "^1.0.0",
+    "leaflet": "x.x.x",
+    "leaflet-minimap": "x.x.x",
     "react-router": "0.x.x",
     "react-bootstrap": "x.x.x",
     "react-bootstrap-slider": "x.x.x",
-    "bootstrap-slider": "4.5.2",
     "react-dnd": "x.x.x",
-    "es6-promise": "^1.0.0",
-    "superagent": "^0.18.2",
-    "underscore": "1.6.0"
+    "superagent": "x.x.x"
   }
 }
