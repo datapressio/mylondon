@@ -9,6 +9,13 @@ require('leaflet-minimap');
 // L.Icon.Default.imagePath = 'node_modules/leaflet/dist/images/';
 
 var objectAssign = require('react/lib/Object.assign');
+function objectSize(obj) {
+    var size = 0, key;
+    for (key in obj) {
+        if (obj.hasOwnProperty(key)) size++;
+    }
+    return size;
+};
 var throttle = require('../throttle');
 
 var Map = React.createClass({
@@ -69,7 +76,7 @@ var Map = React.createClass({
             }
         }
         var map = L.map(this.getDOMNode(), {
-            minZoom: 14,
+            minZoom: 10,
             maxZoom: 18,
             zoomControl: false,
             // fullscreenControl: true,
@@ -90,9 +97,9 @@ var Map = React.createClass({
                 zoomLevelFixed: 10,
                 // autoToggleDisplay: true,
                 position: 'bottomleft',
-                width: 300,
+                width: 295,
                 height: 220,
-                // toggleDisplay: true
+                toggleDisplay: true
             }
         ).addTo(map);
         
@@ -125,6 +132,8 @@ var Map = React.createClass({
         );
         this.data = {
             layers: {},
+            last_updated_props: {},
+            props: {budget: this.props.budget, cards: this.props.cards},
         };
         this.getData(this.props);
     },
@@ -175,34 +184,125 @@ var Map = React.createClass({
     //     return true;
     // },
 
-    getData(props) {
-        if (props.lat && props.lon) {
-            console.log('Setting the map view to', [props.lat, props.lon], props.zoom);
-            this.state.map.setView([props.lat, props.lon], props.zoom);
-            this.updateUrl();
-        }
-        // We aren't deleting the layers we don't need in this implementation - will this slow things down?
-        if (props.lsoas.length) { // && ! this.sameArrays(this.props.lsoas, props.lsoas)) {
-            if (config.debug) {
-                console.log('Rendering map: '+props.lsoas.length+' lsoas');
+
+    // Start of helpers
+
+    shouldReCalculate(prevProps, nextProps) {
+        // console.log('Should component update', prevProps.bbox, nextProps.bbox);
+        // If the URL props are the same, there is nothing to do, config won't have changed
+        var to_check = ['budget', 'cards'];
+        for (var i=0; i<to_check.length; i++) {
+            if (!prevProps[to_check[i]]) {
+                console.log('No prevProps', to_check[i]);
+                return true;
             }
-            for (var i=0; i<props.lsoas.length; i++) {
-                var lsoa = props.lsoas[i];
-                if (props.geometry[lsoa] && props.summary[lsoa]) {
-                    if (!this.data.layers[lsoa]) {
-                        var layer = L.geoJson(props.geometry[lsoa], {});
-                        // Don't make the layer visible yet
-                        layer.setStyle({
+        }
+        var to_check = ['budget'];
+        for (var i=0; i<to_check.length; i++) {
+            if (nextProps[to_check[i]] !== prevProps[to_check[i]]) {
+                console.log('Mismatch', to_check[i]);
+                return true;
+            }
+        }
+        to_check = ['cards'];
+        for (var i=0; i<to_check.length; i++) {
+            if (nextProps[to_check[i]].length != prevProps[to_check[i]].length) {
+                return true;
+            }
+            for (var j=0; j<nextProps[to_check[i]].length; j++) {
+                if (nextProps[to_check[i]][j] != prevProps[to_check[i]][j]) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    },
+
+    lsoas_have_changed: function(lsoas) {
+        if ((lsoas.length > 0 && !this.data.lsoas) || (lsoas.length !== this.data.lsoas.length)) {
+            return true
+        }
+        for (var i=0; i<lsoas.length; i++) {
+            if (lsoas[i] != this.data.lsoas[i]) {
+                return true;
+            }
+        }
+        return false;
+    },
+    
+    have_geometries: function(props) {
+        for (var i=0; i<props.lsoas.length; i++) {
+            var lsoa = props.lsoas[i];
+            if (!(props.geometry[lsoa] && objectSize(props.summary))) {
+                return false;
+            }
+        }
+        return true;
+    },
+
+    create_layer: function(lsoa, props) {
+        // console.log('Creating layer LSOA: ', lsoa);
+        var layer = L.geoJson(props.geometry[lsoa], {});
+        // console.log(layer, lsoa);
+        var oas = {}
+        for (var sub_layer in layer._layers) {
+            if (layer._layers.hasOwnProperty(sub_layer)) {
+                oas[layer._layers[sub_layer].feature.properties.OA11CD] = layer._layers[sub_layer]
+                layer._layers[sub_layer].on(
+                    'click', 
+                    function(event) { 
+                        console.log('Clicked OA: ', this.oa);
+                        if (config.debug) {
+                            console.log(event.layer.feature.properties);
+                        }
+                        // var title = 'LSOA: ' + this.lsoa + ', OA: ' + event.layer.feature.properties.OA11CD;
+                        // title});
+                        var query = objectAssign(
+                            {},
+                            this.component.props.query,
+                            {
+                                oa: this.oa, //event.layer.feature.properties.OA11CD,
+                                lsoa: this.lsoa,
+                            }
+                        );
+                        this.component.context.router.transitionTo('map', this.component.props.params, query);
+                        console.log('done');
+                    }.bind(
+                        {
+                            component: this,
+                            oa: layer._layers[sub_layer].feature.properties.OA11CD,
+                            lsoa: lsoa,
+                        }
+                    ) // We don't bind the query or params, we want to use the latest 
+                ); 
+            }
+        }
+        layer.lsoa = lsoa;
+        layer.oas = oas;
+        // Don't make the layer visible yet
+        // layer.setStyle({
+        //     stroke: false,
+        //     fillOpacity: 0,
+        // });
+        this.data.layers[lsoa] = layer;
+    },
+
+    set_rank: function(layer, props) {
+        for (var oa in layer.oas) {
+            if (layer.oas.hasOwnProperty(oa)) {
+                if (!props.summary[oa]) {
+                    // console.log('No summary data for ', oa);
+                } else {
+                    // console.log(rank);
+                    // layer.bindPopup('<div>LSOA: ' + lsoa + '</div>');
+                    var data = props.summary[oa];
+                    if (props.budget < data.rent) {
+                        layer.oas[oa].setStyle({
                             stroke: false,
-                            fillOpacity: 0,
+                            color: '#f00',
+                            fillOpacity: (0.2),
                         });
-                        // // Hack the LSOA on
-                        // layer.lsoa = lsoa
-                        this.data.layers[lsoa] = layer;
-                    }
-                    var layer = this.data.layers[lsoa];
-                    if (layer) {
-                        var data = props.summary[lsoa];
+                    } else {
                         var rank = this.calculate_rank(
                             props.colors,
                             data,
@@ -212,44 +312,155 @@ var Map = React.createClass({
                             props.modifiers.green_space,
                             props.modifiers.schools
                         );
-                        // console.log(rank);
-                        // layer.bindPopup('<div>LSOA: ' + lsoa + '</div>');
-                        layer.on('click', function(event) { 
-                            if (config.debug) {
-                                console.log(event.layer.feature.properties);
-                            }
-                            var title = 'LSOA: ' + this.lsoa + ', OA: ' + event.layer.feature.properties.OA11CD;
-                            var query = objectAssign({}, this.query, { oa: title});
-                            this.component.context.router.transitionTo('map', this.params, query);
-                        }.bind({component: this, lsoa: lsoa, query: props.query, params: props.params}));
-                        layer.setStyle({
+                        layer.oas[oa].setStyle({
                             color: rank.color,
                             stroke: true,
-                            fillOpacity: (0.32 + rank.value/2.2),
+                            fillOpacity: (0.1 + rank.value/1.3),
                         });
-                        if (props.budget >= data.rent && !this.state.map.hasLayer(layer)) {
-                            if (config.debug) {
-                                console.log('Adding layer');
-                            }
-                            this.state.map.addLayer(layer);
-                        } else if (props.budget < data.rent && this.state.map.hasLayer(layer)) {
-                            if (config.debug) {
-                                console.log('Removing layer');
-                            }
-                            this.state.map.removeLayer(layer);
-                            layer.setStyle({
-                                stroke: false,
-                                fillOpacity: 0,
-                            });
-                        }
                     }
                 }
             }
         }
     },
 
+    getData(props) {
+        if (props.lat && props.lon) {
+            console.log('Setting the map view to', [props.lat, props.lon], props.zoom);
+            this.state.map.setView([props.lat, props.lon], props.zoom);
+            this.updateUrl();
+            return;
+        }
+        if (!props.lsoas.length) {
+            return
+        }
+        if (props.zoom < 14) {
+            if (this.data.lsoas && this.data.lsoas.length) {
+                this.state.map.eachLayer(function (layer) {
+                    if (layer.lsoa) {
+                        this.component.state.map.removeLayer(layer);
+                    }
+                }.bind({component: this, lsoas: props.lsoas}));
+                this.data.lsoas = [];
+            }
+            return;
+        }
+        
+        // Two types of changes here:
+        // * Polygons to display have changed - i.e lsoas have changed, 
+        // * Rank calculation has changed 
+
+        if (this.lsoas_have_changed(props.lsoas)) {
+            // 1. See if we have all the geometries, if not we might as well wait
+            if (!this.have_geometries(props)) {
+                console.log("LSOAs changed, we don't have all geometries yet though");
+                return;
+            }
+            console.log('Rendering polygons');
+            for (var i=0; i<props.lsoas.length; i++) {
+                var lsoa = props.lsoas[i];
+                // 2. Create new layers
+                if (!this.data.layers[lsoa]) {
+                    this.create_layer(lsoa, props);
+                }
+                // 3. Calculate the rank of all the new polygons:
+                var layer = this.data.layers[lsoa];
+                // 4. Add them to the map
+                if (!this.state.map.hasLayer(layer)) {
+                    var layer = this.data.layers[lsoa];
+                    this.set_rank(layer, props);
+                    this.state.map.addLayer(layer);
+                }
+            }
+            // 5. Remove layers from the map we don't need anymore.
+            this.state.map.eachLayer(function (layer) {
+                if (layer.lsoa && this.lsoas.indexOf(layer.lsoa) === -1) {
+                    this.component.state.map.removeLayer(layer);
+                }
+            }.bind({component: this, lsoas: props.lsoas}));
+            this.data.lsoas = props.lsoas
+        } else {
+            console.log('No LSOA change');
+            if (this.shouldReCalculate(this.data.props, props)) {
+                console.log('Need to colour');
+                // In this case we need to re-color everything
+                for (var i=0; i<props.lsoas.length; i++) {
+                    var lsoa = props.lsoas[i];
+                    var layer = this.data.layers[lsoa];
+                    this.set_rank(layer, props);
+                }
+                this.data.props.budget = props.budget;
+                this.data.props.cards = props.cards;
+            } else {
+                console.log('No query change');
+            }
+        }
+
+
+        // for (var i=0; i<props.lsoas.length; i++) {
+        //     var found = false 
+        //     for (var j=0; j<lsoas.length; j++) {
+        //         if (lsoas[j] === window.layer_store.lsoas[i]) {
+        //             found = true
+        //             break
+        //         }
+        //     }
+        //     if (!found) {
+        //         // Remove any layers we no longer need 
+        //         var lsoa = window.layer_store.lsoas[i]
+        //         if (window.layer_store.layers[lsoa] && window.map.hasLayer(window.layer_store.layers[lsoa])) {
+        //             // console.log('Removing layer ', lsoa)
+        //             window.map.removeLayer(window.layer_store.layers[lsoa]);
+        //             delete window.layer_store.layers[lsoa];
+        //             // window.layer_store.layers[lsoa].setStyle({
+        //             //     fillOpacity: 0,
+        //             // });
+        //         }
+        //     }
+        // }
+        // if (props.lsoas.length) { // && ! this.sameArrays(this.props.lsoas, props.lsoas)) {
+        //     if (config.debug) {
+        //         console.log('Rendering map: '+props.lsoas.length+' lsoas');
+        //     }
+        //     var all_geometries = true;
+        //     // Remove layers we no longer need
+        //     this.state.map.eachLayer(function (layer) {
+        //         if (layer.lsoa && this.props.lsoas.indexOf(layer.lsoa) === -1) {
+        //         //    console.log('Removing layer ', layer.lsoa);
+        //             this.state.map.removeLayer(layer);
+        //         }
+        //     }.bind(this));
+        //     for (var i=0; i<props.lsoas.length; i++) {
+        //         var lsoa = props.lsoas[i];
+        //         // if (props.geometry[lsoa] && props.summary[lsoa]) {
+        //         if (!(props.geometry[lsoa] && objectSize(props.summary))) {
+        //             all_geometries = false;
+        //             break;
+        //         }
+        //     }
+        //     if (all_geometries) {
+        //         if (!this.shouldReCalculate(this.data.last_updated_props, props)) { 
+        //             console.log('Skipping recalculate')
+        //             return
+        //         } 
+        //         console.log('Recalculate');
+        //         for (var i=0; i<props.lsoas.length; i++) {
+        //             var lsoa = props.lsoas[i];
+        //             var just_created = false;
+
+
+        //     }
+        //     if (all_geometries) {
+        //         this.data.last_updated_props = {
+        //             lsoas: props.lsoas,
+        //             cards: this.props.cards,
+        //             budget: this.props.budget,
+        //         }
+        //     }
+        // }
+    },
+
     render: function() {
-        console.log(this.state.width, this.state.height, window.innerWidth, window.innerHeight);
+        // console.log(this.state.width, this.state.height, window.innerWidth, window.innerHeight);
         return (
             <div 
                 className='map'

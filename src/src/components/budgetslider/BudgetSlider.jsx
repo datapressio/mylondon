@@ -9,18 +9,21 @@ require('./budgetslider.css');
 
 
 var BudgetSlider = React.createClass({
-    mixins: [ Router.Navigation, Router.State ],
   
+    contextTypes: {
+        router: React.PropTypes.func
+    },
+
     didChange: function(value) {
-        var query = objectAssign({}, this.getQuery(), {budget: value});
-        this.replaceWith('map', {area: 'warren road'}, query);
+        var query = objectAssign({}, this.props.query, {budget: value});
+        this.context.router.replaceWith('map', this.props.params, query);
     },
   
     render: function() {
         return (
           <div>
               <span>Your budget: Up to <span className="highlight">&pound;{this.props.budget} pw</span> per person</span><br />
-              <Slider min={50} max={500} step={10} value={this.props.budget} toolTip={false} onSlide={this.didChange} /><br />
+              <Slider min={this.props.min} max={this.props.max} step={this.props.step} value={this.props.budget} toolTip={false} onSlide={this.didChange} /><br />
           </div>
         );
     }

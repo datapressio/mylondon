@@ -1,15 +1,19 @@
 import React from 'react';
 import Container from './Container';
 
+
 const Priorities = React.createClass({
-  render() {
-    // console.log(this.props.cards);
-    return (
-      <div>
-        <Container cards={this.props.cards} />
-      </div>
-    );
-  }
+    render() {
+        return (
+            <div>
+                <Container
+                    cards={this.props.cards} 
+                    params={this.props.params} 
+                    query={this.props.query} 
+                />
+            </div>
+        );
+    }
 });
 
 export default Priorities;

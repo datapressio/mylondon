@@ -18,8 +18,18 @@ After holiday:
 * Try MSOAs for higher level view
 * Re-introduce styles
 
+Cheating on:
+* Individual OAs on the render - using LSOAs - Need layer groups
+
 */
 
+function objectSize(obj) {
+    var size = 0, key;
+    for (key in obj) {
+        if (obj.hasOwnProperty(key)) size++;
+    }
+    return size;
+};
 
 var React = require('react');
 
@@ -57,6 +67,7 @@ var config = require('./data.jsx')
 
 var request = require('superagent');
 
+// var HOST = '159.253.149.235:17435'
 var HOST = 'localhost:8000'
 
 var getLSOAs = function(bbox) {
@@ -77,6 +88,78 @@ var getLSOAs = function(bbox) {
                 reject(res.ok);
             } else {
                 resolve(res.text.split('\n'));
+            }
+        });
+    });
+};
+
+var rating_values = {
+    "below average": 0,
+    "average": 0.5,
+    "above average": 0.75,
+    "top 20 percent": 1,
+};
+
+var rating_to_string = {}
+for (var name in rating_values) {
+    if (rating_values.hasOwnProperty(name)) {
+        rating_to_string[rating_values[name]] = name.charAt(0).toUpperCase() + name.slice(1);
+    }
+}
+
+var getSummary = function() {
+    if (config.debug) {
+        console.log("Fetching the summary csv")
+    }
+    return new Promise(function (resolve, reject) {
+        request.get('http://'+HOST+'/http/summary.csv')
+        .end(function (err, res) {
+            if (err) {
+                console.error('Error:' + err);
+                reject(err);
+            } else if (!res.ok) {
+                console.error('Not OK');
+                reject(res.ok);
+            } else {
+                var summary = {};
+                var lsoa_to_oa = {}
+                var oa_to_lsoa = {}
+                var oa_lines = res.text.split('\n')
+                for (var i=0; i<oa_lines.length-1; i++) {
+                    var parts = oa_lines[i].split('|');
+                    if (lsoa_to_oa[parts[1]]) {
+                        lsoa_to_oa[parts[1]].push(parts[0]);
+                    } else {
+                        lsoa_to_oa[parts[1]] = [parts[0]];
+                    }
+                    oa_to_lsoa[parts[0]] = parts[1];
+                    summary[parts[0]] = {
+                        rent: parts[3]/4.0, // Per week
+                        green_space: rating_values[parts[4]],
+                        transport: rating_values[parts[5]],
+                        crime: 1-(parts[6]/6233),
+                        schools: parts[7],
+                    };
+                    if (config.debug && i==1) {
+                        console.log(parts[1], summary[parts[1]]);
+                    }
+                }
+                    //    modelled_rents_oa.OA11CD
+                    //  , oa_to_lsoa.LSOA11CD
+                    //  , oa_to_lsoa.LAD11NM 
+                    //  , modelled_rents_oa.Ave_rent_1_bedroom
+                    //  , openspace_oa.London_rank
+                    //  , travel_oa.London_rank
+                    //  , crime_oa.Crimes
+                    //  , 0.5
+                    //  e.g.
+                    //  crime: "19"green_space: "average"rent: "2193"schools: "0.5"transport: "top 20 percent"
+
+                resolve({
+                    summary: summary,
+                    lsoa_to_oa: lsoa_to_oa,
+                    oa_to_lsoa: oa_to_lsoa,
+                });
             }
         });
     });
@@ -193,6 +276,9 @@ var MapData = React.createClass({
             geometry: {},
             geometry_pending: {},
             summary: {},
+            oa_to_lsoa: {},
+            lsoa_to_oa: {},
+            summary_pending: false,
         };
         this.getData(this.props);
     },
@@ -246,34 +332,32 @@ var MapData = React.createClass({
             cards: cards,
             modifiers: modifiers,
         })
-
+        if (!objectSize(this.data.summary) && !this.data.summary_pending) {
+            if (config.debug) {
+                console.log('Fetching summary data', objectSize(this.data.summary), this.data.summary_pending);
+            }
+            this.data.summary_pending = true;
+            getSummary().then(
+                function (data) {
+                    if (config.debug) {
+                        console.log('Got summary data')
+                    }
+                    this.component.data.summary = data.summary;
+                    this.component.data.lsoa_to_oa = data.lsoa_to_oa;
+                    this.component.data.oa_to_lsoa = data.oa_to_lsoa;
+                    this.component.data.summary = data.summary
+                    this.component.data.summary_pending = false;
+                    this.component.throttledSetState(this.component, {data_updated: new Date()});
+                }.bind({component:this}),
+                function(err){
+                    console.error(err);
+                }.bind({component: this})
+            );
+        }
         if (bbox) {
             getLSOAs(bbox).then(
                 function (lsoas) {
                     this.component.setState({lsoas: lsoas});
-                    // // Remove layers we no longer need
-                    // for (var i=0; i<window.layer_store.lsoas.length; i++) {
-                    //     var found = false 
-                    //     for (var j=0; j<lsoas.length; j++) {
-                    //         if (lsoas[j] === window.layer_store.lsoas[i]) {
-                    //             found = true
-                    //             break
-                    //         }
-                    //     }
-                    //     if (!found) {
-                    //         // Remove any layers we no longer need 
-                    //         var lsoa = window.layer_store.lsoas[i]
-                    //         if (window.layer_store.layers[lsoa] && window.map.hasLayer(window.layer_store.layers[lsoa])) {
-                    //             // console.log('Removing layer ', lsoa)
-                    //             window.map.removeLayer(window.layer_store.layers[lsoa]);
-                    //             delete window.layer_store.layers[lsoa];
-                    //             // window.layer_store.layers[lsoa].setStyle({
-                    //             //     fillOpacity: 0,
-                    //             // });
-                    //         }
-                    //     }
-                    // }
-                    // window.layer_store.lsoas = lsoas;
 
                     if (config.debug) {
                         console.log('Need to display '+lsoas.length+' layers'); 
@@ -289,13 +373,13 @@ var MapData = React.createClass({
                                     if (this.component.state.lsoas.indexOf(this.lsoa) !== -1) {
                                         this.component.data.geometry[this.lsoa] = geometry
                                         delete this.component.data.geometry_pending[this.lsoa];
-                                        this.component.data.summary[this.lsoa] = {
-                                            rent:        (Math.random()*500)-100,
-                                            crime:       Math.random(),
-                                            transport:   Math.random(),
-                                            green_space: Math.random(),
-                                            schools:     Math.random(),
-                                        }
+                                        // this.component.data.summary[this.lsoa] = {
+                                        //     rent:        (Math.random()*500)-100,
+                                        //     crime:       Math.random(),
+                                        //     transport:   Math.random(),
+                                        //     green_space: Math.random(),
+                                        //     schools:     Math.random(),
+                                        // }
                                         this.component.throttledSetState(this.component, {data_updated: new Date()});
                                         // console.log('Set new geometry and summary for ', this.lsoa);
                                     }
@@ -335,7 +419,6 @@ var MapData = React.createClass({
 
 var Panel = React.createClass({
 
-
     onSearch(e) {
         e.preventDefault();
         var postcode = this.refs.postcode.getInputDOMNode().value;
@@ -343,24 +426,46 @@ var Panel = React.createClass({
     },
 
     render() {
+        if (this.props.zoom < 14) {
+            var content = (
+                <p>Zoom in more to see shaded regions of London.</p>
+            )
+        } else {
+            var content = (
+                <div> 
+                    <BudgetSlider 
+                        budget={this.props.budget}
+                        params={this.props.params}
+                        query={this.props.query}
+                        min={50}
+                        max={1000}
+                        step={10}
+                    />
+                    <br />
+            
+                    <p>What is most important to you when moving to a new area?</p>
+                    <p><em>(tip: drag the boxes up &amp; down the list)</em></p>
+            
+                    <Priorities
+                        cards={this.props.cards}
+                        params={this.props.params}
+                        query={this.props.query}
+                    />
+                </div>
+            )
+        }
         return (
             <div className="settings" style={{ 
-                height: window.innerHeight - 250,
+                height: 380, //window.innerHeight - 250,
             }}>
-
+    
                 <h2 style={{marginBottom: '19px', marginTop: '0px'}}>MyLondon </h2>
-
-                <p>Enter a postcode to move to that area: </p>
+    
                 <form onSubmit={this.onSearch}>
                     <Input ref="postcode" type='search' placeholder='Postcode' />
                 </form>
 
-                <BudgetSlider budget={this.props.budget} /> <br />
-
-                <p>What is most important to you when moving to a new area?</p>
-                <p><em>(tip: drag the boxes up &amp; down the list)</em></p>
-
-                <Priorities cards={this.props.cards} />
+                {content} 
             </div>
         )
     }
@@ -391,6 +496,9 @@ var Main = React.createClass({
                 onRequestHide={this.hideModal}
                 params={this.props.params}
                 query={this.props.query}
+                summary={this.props.summary}
+                oa={this.props.query.oa}
+                lsoa={this.props.query.lsoa}
             />
         );
         return (
@@ -409,11 +517,15 @@ var Main = React.createClass({
                     lsoas={this.props.lsoas}
                     geometry={this.props.geometry}
                     summary={this.props.summary}
+                    cards={this.props.cards}
                     data_updated={this.props.data_updated}
                 />
                 <Panel
+                    params={this.props.params}
+                    query={this.props.query}
                     cards={this.props.cards}
                     budget={this.props.budget}
+                    zoom={this.props.zoom}
                     onChangePostcode={this.props.onChangePostcode}
                 />
                 {modal}
@@ -425,67 +537,46 @@ var Main = React.createClass({
 
 var DetailPopup = React.createClass({
     render: function() {
-        return (
-            <Modal {...this.props} bsStyle="primary" title={this.props.query.oa} animation={false} backdrop={true}>
-                <div className="modal-body">
-                    <div>
-                        <div className="zone">Transport: Zone 2</div> 
-                           <div className="metrics"> 
-                             <div className="help">
-                                 <strong>Crime Rating:</strong> Statistical analysis of the number of crimes per capita in this area.
-                             </div>        
-                             <div className="metric">
-                                 <div className="bar-container">
-                                     <div className="bar" style={{height: '66.0921038500965px', 'backgroundColor': 'rgb(0, 101, 204)'}}></div>
-                                     <div className="bar-tooltip">#1652 / 2500</div>
-                                 </div>
-                                 <div className="info">
-                                     <div className="icon"><i className="fa fa-gavel"></i></div>
-                                 </div>
-                             </div>
-                             <div className="metric">
-                                 <div className="bar-container">
-                                     <div className="bar" style={{height: '66.0921038500965px', 'backgroundColor': 'rgb(87, 174, 87)'}}></div>
-                                     <div className="bar-tooltip">#1652 / 2500</div>
-                                 </div>
-                                 <div className="info">
-                                     <div className="icon"><i className="fa fa-gavel"></i></div>
-                                 </div>
-                             </div>
-                             <div className="metric">
-                                 <div className="bar-container">
-                                     <div className="bar" style={{height: '66.0921038500965px', 'backgroundColor': 'rgb(249, 163, 39)'}}></div>
-                                     <div className="bar-tooltip">#1652 / 2500</div>
-                                 </div>
-                                 <div className="info">
-                                     <div className="icon"><i className="fa fa-gavel"></i></div>
-                                 </div>
-                             </div>
-                             <div className="metric">
-                                 <div className="bar-container">
-                                     <div className="bar" style={{height: '100px', 'backgroundColor': 'rgb(210, 72, 66)'}}></div>
-                                     <div className="bar-tooltip">#1652 / 2500</div>
-                                 </div>
-                                 <div className="info">
-                                     <div className="icon"><i className="fa fa-gavel"></i></div>
-                                 </div>
-                             </div>
-                             <div className="description1">
-                                 <h3>Super Group</h3>
-                                 <p>This Super Group comprises young professionals working in the science, technology, finance and insurance sectors. Additionally, large numbers of students rent rooms in centrally located communal establishments. Most others rent privately owned flats, large numbers of which are found in central locations. Residents are disproportionately drawn from pre 2001 EU countries, and there is also high representation of households from Chinese, Arab and other minority backgrounds.</p>
-                             </div>
-                             <div className="description2">
-                                 <h3>More Details...</h3>
-                                 <p>Many of the residents of these neighbourhoods are employed in the financial, insurance and real estate industries, or are information and communications industry professionals engaged in a range of scientific and technical activities. Residents are more likely than average to be White.</p>
-                             </div>
-                        </div>
+        // console.log(this.props.summary[this.props.oa])
+        if (!this.props.summary[this.props.oa]) {
+            return null;
+        } else {
+            return (
+                <Modal {...this.props} bsStyle="primary" title={'OA: '+this.props.query.oa} animation={false} backdrop={true}>
+                    <div className="modal-body">
+                        <table>
+                          <tr>
+                              <td className="key">LSOA</td>
+                              <td>{this.props.lsoa}</td>
+                          </tr>
+                          <tr>
+                              <td className="key">Average rent per week:</td>
+                              <td>&pound;{this.props.summary[this.props.oa].rent}</td>
+                          </tr>
+                          <tr>
+                              <td className="key">Green Space:</td>
+                              <td>{rating_to_string[this.props.summary[this.props.oa].green_space]}</td>
+                          </tr>
+                          <tr>
+                              <td className="key">Transport:</td>
+                              <td>{rating_to_string[this.props.summary[this.props.oa].transport]}</td>
+                          </tr>
+                          <tr>
+                              <td className="key">Crime:</td>
+                              <td>{rating_to_string[this.props.summary[this.props.oa].transport]}</td>
+                          </tr>
+                          <tr>
+                              <td className="key">Schools:</td>
+                              <td>{rating_to_string[this.props.summary[this.props.oa].schools]}</td>
+                          </tr>
+                        </table>
                     </div>
-                </div>
-                <div className="modal-footer">
-                    <Button onClick={this.props.onRequestHide}>Close</Button>
-                </div>
-            </Modal>
-        );
+                    <div className="modal-footer">
+                        <Button onClick={this.props.onRequestHide}>Close</Button>
+                    </div>
+                </Modal>
+            );
+        }
     }
 });
 

@@ -2,7 +2,7 @@ var max = 1; //2500;
 var raw_data = {
     max: max,
     modifier_ratings: [1.5, 1, 0.75, 0.5],
-    throttle: 500,
+    throttle: 1000,
     debug: false,
     colors: [
         // '#f7fcf5',

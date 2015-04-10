@@ -1,23 +1,22 @@
 #!/bin/sh
 
 
-
-function get_json () {
-    if [ ! -e oa_by_lsoa ]; then
-        mkdir oa_by_lsoa
-    fi;
-    cd oa_by_lsoa
-    for i in "E01004376" "E01004375" "E01004374" "E01004373" "E01004372" "E01004371"; do
-        if [ ! -e "${i}.json" ]; then
-            echo "Fetching ${i}.json ..."
-            wget "https://raw.githubusercontent.com/martinjc/UK-GeoJSON/master/json/statistical/eng/oa_by_lsoa/${i}.json" > /dev/null 2> /dev/null
-            echo "done."
-        else
-            echo "Already got ${i}.json."
-        fi
-    done
-    cd ../
-}
+# function get_json () {
+#     if [ ! -e oa_by_lsoa ]; then
+#         mkdir oa_by_lsoa
+#     fi;
+#     cd oa_by_lsoa
+#     for i in "E01004376" "E01004375" "E01004374" "E01004373" "E01004372" "E01004371"; do
+#         if [ ! -e "${i}.json" ]; then
+#             echo "Fetching ${i}.json ..."
+#             wget "https://raw.githubusercontent.com/martinjc/UK-GeoJSON/master/json/statistical/eng/oa_by_lsoa/${i}.json" > /dev/null 2> /dev/null
+#             echo "done."
+#         else
+#             echo "Already got ${i}.json."
+#         fi
+#     done
+#     cd ../
+# }
 
 function js_deps () {
     if [ ! -e http ]; then
@@ -38,6 +37,5 @@ function js_deps () {
 
 
 js_deps
-get_json
 
 echo "Success."
