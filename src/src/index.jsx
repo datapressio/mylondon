@@ -41,6 +41,7 @@ var DefaultRoute = Router.DefaultRoute;
 var Link = Router.Link;
 var RouteHandler = Router.RouteHandler;
 
+var Promise = require('es6-promise').Promise;
 var objectAssign = require('react/lib/Object.assign');
 
 // Bootstrap

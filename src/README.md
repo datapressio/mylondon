@@ -61,7 +61,7 @@ This will create the `http/summary.csv` file we need.
 Now sync the other files we need:
 
 ~~~
-rsync -axHv --progress --stats index.html build summary.csv http serve.py serve_requirements.txt shape_to_bbox.py shape_to_bbox_requirements.txt bbox.db threeaims01@web385.webfaction.com:datapress/mylondon/
+rsync -axHv --progress --stats index.html bower_components build summary.csv http serve.py serve_requirements.txt shape_to_bbox.py shape_to_bbox_requirements.txt bbox.db threeaims01@web385.webfaction.com:datapress/mylondon/
 rsync -axHv --progress --stats ../../repos/jimmyg threeaims01@web385.webfaction.com:datapress/mylondon/
 ~~~
 
