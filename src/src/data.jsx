@@ -1,9 +1,10 @@
 var max = 1; //2500;
 var raw_data = {
     max: max,
+    parallel_loads: 1, //4
     modifier_ratings: [1.5, 1, 0.75, 0.5],
-    throttle: 1000,
-    debug: false,
+    throttle: 250,
+    debug: true,
     colors: [
         // '#f7fcf5',
         '#e5f5e0',
