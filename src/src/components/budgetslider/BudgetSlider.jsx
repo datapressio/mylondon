@@ -20,9 +20,20 @@ var BudgetSlider = React.createClass({
     },
   
     render: function() {
+        if (this.props.budget !== 1000) {
+            var description = (
+                <span>
+                    Your budget: Up to <span className="highlight">&pound;{this.props.budget} pw</span> per person
+                </span>
+            )
+        } else {
+            var description = (
+                <span>Your budget: Money is no object.</span>
+            )
+        }
         return (
           <div>
-              <span>Your budget: Up to <span className="highlight">&pound;{this.props.budget} pw</span> per person</span><br />
+              {description}<br />
               <Slider min={this.props.min} max={this.props.max} step={this.props.step} value={this.props.budget} toolTip={false} onSlide={this.didChange} /><br />
           </div>
         );

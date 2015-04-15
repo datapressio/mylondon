@@ -71,9 +71,10 @@ var config = require('./data.jsx')
 
 var request = require('superagent');
 
-//var HOST = '159.253.149.235:17435'
 //var HOST = 'localhost:8000'
-var HOST = '192.168.0.4:8000'
+//var HOST = '192.168.0.4:8000'
+//var HOST = '10.14.3.68:8000'
+var HOST = 's26.datapress.io'
 
 var getLSOAs = function(bbox) {
     if (config.debug) {
@@ -405,11 +406,12 @@ var MapData = React.createClass({
                     // console.log('No summary data for ', oa);
                 } else {
                     var data = summary[oa];
-                    if (budget < data.rent) {
+                    if (budget !== 1000 && budget < data.rent) {
                         // console.log('Budget less than rent in '+oa+', setting red');
                         layer.oas[oa].setStyle({
                             stroke: false,
                             color: '#f00',
+                            weight: 3,
                             fillOpacity: (0.2),
                         });
                     } else {
@@ -427,6 +429,7 @@ var MapData = React.createClass({
                         layer.oas[oa].setStyle({
                             color: rank.color,
                             stroke: true,
+                            weight: 3,
                             fillOpacity: (0.1 + rank.value/1.3),
                         });
                     }

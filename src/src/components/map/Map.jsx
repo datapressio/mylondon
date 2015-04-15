@@ -1,11 +1,11 @@
 var React = require('react');
 var Router = require('react-router');
-
 var config = require('../../data.jsx')
 require('./map.css');
 require('leaflet-minimap');
-
 var objectAssign = require('react/lib/Object.assign');
+var throttle = require('../throttle');
+
 
 function objectSize(obj) {
     var size = 0, key;
@@ -14,7 +14,7 @@ function objectSize(obj) {
     }
     return size;
 };
-var throttle = require('../throttle');
+
 
 var Map = React.createClass({
   
@@ -30,29 +30,6 @@ var Map = React.createClass({
         };
     },
   
-    // calculate_rank: function(colors, data, max, crime_modifier, transport_modifier, green_space_modifier, schools_modifier) {
-    //     var max_score = max*(crime_modifier+transport_modifier+green_space_modifier+schools_modifier);
-    //     var total = (
-    //         (data.crime)*crime_modifier
-    //     ) + (
-    //         (data.transport)*transport_modifier
-    //     ) + (
-    //         (data.green_space)*green_space_modifier
-    //     ) + (
-    //         (data.schools)*schools_modifier
-    //     )
-    //     var rank = {
-    //         value: total / max_score,
-    //         color: '#000000',
-    //     }
-    //     for (var i=0; i<colors.length; i++) {
-    //         if (rank.value <= (i+1)/colors.length) {
-    //             rank.color = colors[i];
-    //             break;
-    //         }
-    //     }
-    //     return rank;
-    // },
   
     componentDidMount: function() {
         if (config.debug) {
@@ -85,22 +62,22 @@ var Map = React.createClass({
 
         // var url='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
         // // var url='http://{s}.tile.thunderforest.com/transport/{z}/{x}/{y}.png'
+        var url = 'http://ojw.dev.openstreetmap.org/map/tiles/rail/{z}/{x}/{y}.png'
 
-        // var osmAttrib='Map data &copy; OpenStreetMap contributors';
         // Note that you cannot use the same layer object again, as that will confuse the two map controls
-        // var osm2 = new L.TileLayer(url, {minZoom: 0, maxZoom: 11, attribution: osmAttrib });
-        // var miniMap = new L.Control.MiniMap(
-        //     osm2,
-        //     {
-        //         zoomLevelFixed: 10,
-        //         // autoToggleDisplay: true,
-        //         position: 'bottomleft',
-        //         width: 295,
-        //         height: 220,
-        //         toggleDisplay: true
-        //     }
-        // ).addTo(map);
-        // 
+        var osmAttrib='Map data &copy; OpenStreetMap contributors';
+        var osm2 = new L.TileLayer(url, {minZoom: 0, maxZoom: 11, attribution: osmAttrib });
+        var miniMap = new L.Control.MiniMap(
+            osm2,
+            {
+                zoomLevelFixed: 10,
+                // autoToggleDisplay: true,
+                position: 'bottomleft',
+                width: 295,
+                height: 220,
+                toggleDisplay: true
+            }
+        ).addTo(map);
         L.tileLayer(
             'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             // 'https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png',
