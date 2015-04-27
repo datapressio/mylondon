@@ -19,7 +19,21 @@
     "file-loader": "x.x.x",
     "url-loader": "x.x.x",
     "jquery": "x.x.x",
-    "css-loader": "x.x.x"
+    "css-loader": "x.x.x",
+
+
+
+"karma": "x.x.x",
+"karma-cli": "x.x.x",
+"karma-mocha": "x.x.x",
+"karma-webpack": "x.x.x",
+"karma-sourcemap-loader": "x.x.x",
+"karma-chrome-launcher": "x.x.x",
+"expect": "x.x.x"
+
+
+
+
   },
   "dependencies": {
     "bootstrap-slider": "4.5.2",

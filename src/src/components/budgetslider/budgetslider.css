@@ -1,3 +1,13 @@
 .highlight {
-    color: #ef4c2e;
+    font-weight: bold;
 }
+.slider-handle {
+    /* background: #000; */
+}
+.slider-selection {
+    border-bottom: 3px solid #238b45;
+}
+.slider-track-high {
+    border-top: 3px solid rgb(51, 122, 183);
+}
+

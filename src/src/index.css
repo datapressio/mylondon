@@ -1,5 +1,5 @@
 body {
-    min-height: 768px;
+
 }
 
 .leaflet-zoom-animated g path:hover { fill: #fff; }
@@ -23,13 +23,11 @@ body {
     bottom: 10px;
     box-shadow: rgba(0, 0, 0, 0.65098) 0px 1px 5px 0px;
     display: block;
-    height: 380px;
-    min-height: 380px;
     left: 10px;
     line-height: normal;
     overflow-x: hidden;
     overflow-y: hidden;
-    position: absolute;
+    position: fixed;
     top: 10px;
     width: 295px;
     z-index: 10;

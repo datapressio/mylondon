@@ -22,8 +22,8 @@ if [ ! -e "${CSVDIR}" ]; then
     exit 1
 fi
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-if [ ! -e "${CSVDIR}/Houseprices_LSOA.csv" ]; then
-    echo "No Houseprices_LSOA.csv file found in ${CSVDIR}, are you using the correct path?"
+if [ ! -e "${CSVDIR}/MyLondon_crime_OA.csv" ]; then
+    echo "No MyLondon_crime_OA.csv file found in ${CSVDIR}, are you using the correct path?"
     exit 1;
 fi
 
@@ -39,51 +39,54 @@ if [ ! -e "${WORKDIR}/data.db" ]; then
         exit 1
     fi
     echo 'Importing all the CSV data into $(pwd)/data.db ...'
-    cat "${SCRIPT_DIR}/import.sql" | sqlite3 data.db
+    cat "${SCRIPT_DIR}/import2.sql" | sqlite3 data.db
     mv data.db "${WORKDIR}"
     cd -
     echo 'done.'
 fi
 
-# echo "
-# select
-#     crime_lsoa.LSOA as lsoa
-#   , crimes/(1-(select max(crimes)*1.0 from crime_lsoa)) as crime_rank
-#   , coalesce(education_lsoa.London_rank/(select max(London_rank)*1.0 from education_lsoa where London_rank <> ''), 0) as schools_rank
-#   , 0.5 as transport
-#   , 0.5 as public_space
-# from crime_lsoa
-# LEFT JOIN education_lsoa on crime_lsoa.LSOA = education_lsoa.LSOA
-# ;
-# " | tr '\n' ' ' | sqlite3 ${WORKDIR}/data.db | tr '|', , > out.csv
-
+echo "OA,LSOA,LAD,Rent per month,green space,travel,safety,schools" > http/summary.csv
 echo "
     select
         modelled_rents_oa.OA11CD
       , oa_to_lsoa.LSOA11CD
       , oa_to_lsoa.LAD11NM 
       , modelled_rents_oa.Ave_rent_1_bedroom
-      , openspace_oa.London_rank
+      , openspace_oa.Access
       , travel_oa.London_rank
-      , crime_oa.Crimes -- /(1-(select max(Crimes)*1.0 from crime_lsoa)) as crime_rank
-      , 0.5
+      , crime_oa.Crimes as crime
+      , schools_oa.Weighted_mean_score_of_schools_attended_by_children_living_in_this_LSOA
     FROM modelled_rents_oa
     LEFT JOIN oa_to_lsoa   ON oa_to_lsoa.OA11CD   = modelled_rents_oa.OA11CD
     LEFT JOIN travel_oa    ON travel_oa.OA11CD    = modelled_rents_oa.OA11CD
     LEFT JOIN openspace_oa ON openspace_oa.OA11CD = modelled_rents_oa.OA11CD
     LEFT JOIN crime_oa ON crime_oa.OA11CD = modelled_rents_oa.OA11CD
+    LEFT JOIN schools_oa ON schools_oa.OA11CD = modelled_rents_oa.OA11CD
     ;
-" | sqlite3 data.db > http/summary.csv
+" | sqlite3 data.db >> http/summary.csv
 
 echo "Max crimes"
-echo "select max(Crimes)*1.0 from crime_lsoa;" | sqlite3 data.db
+echo "select max(Crimes*1.0) from crime_oa;" | sqlite3 data.db
+echo "Min crimes"
+echo "select min(Crimes*1.0) from crime_oa;" | sqlite3 data.db
+
+echo "Max schools"
+echo "select max(Weighted_mean_score_of_schools_attended_by_children_living_in_this_LSOA*1.0) from schools_oa;" | sqlite3 data.db
+echo "Min schools"
+echo "select min(Weighted_mean_score_of_schools_attended_by_children_living_in_this_LSOA*1.0) from schools_oa;" | sqlite3 data.db
+
+echo "Max green space"
+echo "select max(openspace_oa.Access*1.0) from openspace_oa;" | sqlite3 data.db
+echo "Min green space"
+echo "select min(openspace_oa.Access*1.0) from openspace_oa;" | sqlite3 data.db
+
 
 echo "Max rent"
 echo "select Ave_rent_1_bedroom*1.0 from modelled_rents_oa 
   -- where 
   --     OA11CD != 'E00010064'
   -- AND OA11CD != 'E00001015'
-order by Ave_rent_1_bedroom*1.0 desc limit 500
+order by Ave_rent_1_bedroom*1.0 desc limit 5
 ; " | sqlite3 data.db
 
 echo "Success."

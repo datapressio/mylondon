@@ -10,6 +10,7 @@ const Priorities = React.createClass({
                     cards={this.props.cards} 
                     params={this.props.params} 
                     query={this.props.query} 
+                    disabled_themes={this.props.disabled_themes}
                 />
             </div>
         );

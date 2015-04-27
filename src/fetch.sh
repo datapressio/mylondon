@@ -23,7 +23,7 @@ function js_deps () {
         mkdir http
     fi;
     cd http
-    for i in "https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" "https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" "https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/fonts/fontawesome-webfont.ttf?v=4.3.0" "http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" "http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js" ; do
+    for i in "https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" "https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" "https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/fonts/fontawesome-webfont.ttf?v=4.3.0" "http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" "http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js" "https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.js" ; do
         if [ ! -e $(basename "${i}") ]; then
             echo "Fetching ${i} ..."
             wget "${i}" > /dev/null 2> /dev/null

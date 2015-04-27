@@ -141,18 +141,19 @@ var getSummary = function() {
                     oa_to_lsoa[parts[0]] = parts[1];
                     summary[parts[0]] = {
                         rent: parts[3]/4.0, // Per week
-                        green_space: rating_values[parts[4]],
+                        green_space: parts[4]/84.3,
                         transport: rating_values[parts[5]],
-                        crime: 1-(parts[6]/6233),
-                        schools: parts[7],
+                        safety: 1-(parts[6]/6233),
+                        crime: (parts[6]/6233),
+                        schools: parts[7]/94.0,
                     };
                     if (config.debug && i==1) {
-                        console.log(parts[0], summary[parts[0]]);
+                        console.log('ttttttttttttttttttttttttttttttttttttt', parts[0], summary[parts[0]]);
                     }
                 }
                     //    modelled_rents_oa.OA11CD
                     //  , oa_to_lsoa.LSOA11CD
-                    //  , oa_to_lsoa.LAD11NM 
+                    //  , oa_to_lsoa.LAD11NM
                     //  , modelled_rents_oa.Ave_rent_1_bedroom
                     //  , openspace_oa.London_rank
                     //  , travel_oa.London_rank
@@ -195,7 +196,7 @@ var getPostcodeData = function(postcode) {
 
 var getGeometry = function(lsoa) {
     return new Promise(function (resolve, reject) {
-        request.get('http://'+HOST+'/lsoa/'+lsoa)
+        request.get('http://'+HOST+'/lsoa_geojson/'+lsoa+'.json')
         .query({})
         // .withCredentials()
         // .set('Authorization', 'Bearer AuthedAuthedAuthedAuthedAuthed')
@@ -222,7 +223,6 @@ window.layer_store = {
 };
 
 
-
 var MapData = React.createClass({
 
     contextTypes: {
@@ -232,9 +232,14 @@ var MapData = React.createClass({
     onChangePostcode(postcode) {
         getPostcodeData(postcode).then(
             function(data) {
+                if (!data.zoom) {
+                    data.zoom = 14;
+                } else if (data.zoom < 13) {
+                    data.zoom = 13;
+                }
                 var query = objectAssign({}, this.props.query, data);
                 this.context.router.transitionTo('map', this.props.params, query);
-            }.bind(this),    
+            }.bind(this),
             function(data) {
                 alert('Error getting postcode information.');
             }.bind(this)
@@ -242,10 +247,10 @@ var MapData = React.createClass({
     },
 
     set_map(map) {
-        console.log('Set map');
+        console.log('Set map ...', map);
         this.data.map = map;
         this.getData(this.props);
-        // this.forceUpdate();
+        //this.forceUpdate();
         // console.log('Forced update');
     },
 
@@ -253,7 +258,7 @@ var MapData = React.createClass({
         if (! this.state || !this.state.cards) {
             return null;
         }
-        return <Main 
+        return <Main
             percentage={this.data.percentage}
             set_map={this.set_map}
             params={this.props.params}
@@ -265,6 +270,7 @@ var MapData = React.createClass({
             budget={this.state.budget}
             bbox={this.state.bbox}
             priority_order={this.state.priority_order}
+            disabled_themes={this.state.disabled_themes}
             cards={this.state.cards}
             modifiers={this.state.modifiers}
             lsoas={this.state.lsoas}
@@ -301,6 +307,7 @@ var MapData = React.createClass({
             pending_lsoas_date: {},
             completed: null,
             percentage: -1,
+            percentage_counter: 1,
             oa_to_lsoa: {},
             lsoa_to_oa: {},
             summary_pending: false,
@@ -327,7 +334,7 @@ var MapData = React.createClass({
     calculate_rank: function(colors, data, max, crime_modifier, transport_modifier, green_space_modifier, schools_modifier) {
         var max_score = max*(crime_modifier+transport_modifier+green_space_modifier+schools_modifier);
         var total = (
-            (data.crime)*crime_modifier
+            (data.safety)*crime_modifier
         ) + (
             (data.transport)*transport_modifier
         ) + (
@@ -357,8 +364,8 @@ var MapData = React.createClass({
             if (layer._layers.hasOwnProperty(sub_layer)) {
                 oas[layer._layers[sub_layer].feature.properties.OA11CD] = layer._layers[sub_layer]
                 layer._layers[sub_layer].on(
-                    'click', 
-                    function(event) { 
+                    'click',
+                    function(event) {
                         console.log('Clicked OA: ', this.oa);
                         // if (config.debug) {
                         //     console.log(event.layer.feature.properties);
@@ -381,22 +388,22 @@ var MapData = React.createClass({
                             oa: layer._layers[sub_layer].feature.properties.OA11CD,
                             lsoa: lsoa,
                         }
-                    ) // We don't bind the query or params, we want to use the latest 
-                ); 
+                    ) // We don't bind the query or params, we want to use the latest
+                );
             }
         }
         layer.lsoa = lsoa;
         layer.oas = oas;
         // Don't make the layer visible yet
-        // layer.setStyle({
-        //     stroke: false,
-        //     fillOpacity: 0,
-        // });
+        layer.setStyle({
+            stroke: false,
+            fillOpacity: 0,
+        });
         //this.data.layers[lsoa] = layer;
         return layer;
     },
 
-    set_colors: function(layer, summary, budget, colors, max, modifiers) {
+    set_colors: function(layer, summary, budget, colors, max, modifiers, weight) {
         // console.log('Layer OAs ', layer.oas);
         // console.log('Layer '+layer.lsoa+' has oas:', layer.oas)
         for (var oa in layer.oas) {
@@ -409,10 +416,11 @@ var MapData = React.createClass({
                     if (budget !== 1000 && budget < data.rent) {
                         // console.log('Budget less than rent in '+oa+', setting red');
                         layer.oas[oa].setStyle({
-                            stroke: false,
-                            color: '#f00',
-                            weight: 3,
-                            fillOpacity: (0.2),
+                            stroke: true,
+                            color: '#0033ff',
+                            weight: weight,
+                            fillOpacity: (0.3),
+                            //opacity: 0.05,
                         });
                     } else {
                         // console.log('Calculating rank for '+oa, this.calculate_rank);
@@ -429,8 +437,10 @@ var MapData = React.createClass({
                         layer.oas[oa].setStyle({
                             color: rank.color,
                             stroke: true,
-                            weight: 3,
+                            weight: weight,
                             fillOpacity: (0.1 + rank.value/1.3),
+                            //fillOpacity: (0.3 + rank.value/1.3),
+                            //opacity: (0.1 + rank.value/1.3)/4,
                         });
                     }
                 }
@@ -452,13 +462,33 @@ var MapData = React.createClass({
             var bbox = null; // Will need to be caclulated dynamically and the URL updated
         }
         var priority_order = (props.query.priority || '1,2,3,4').split(',')
+        var disabled_themes = []
+        if (props.query.disabled_themes) {
+            disabled_themes = props.query.disabled_themes.split(',');
+            for (var i=0; i<disabled_themes.length; i++) {
+                disabled_themes[i] = parseInt(disabled_themes[i]);
+            }
+        }
         var cards = [];
         var modifiers = {};
+        var next = 0;
         for (var i=0; i<priority_order.length; i++) {
             var id = parseInt(priority_order[i]);
-            var theme = config.cards[id]
+            var theme = config.cards[id];
+            theme.disabled = false;
+            modifiers[theme.name] = config.modifier_ratings[next];
+            for (var j=0; j<disabled_themes.length; j++) {
+                if (id === disabled_themes[j]) {
+                    // console.log('yyyyyyyyyyyyyyyyyyyyyyy disabling ', id);
+                    modifiers[theme.name] = 0;
+                    theme.disabled = true;
+                    break;
+                }
+            }
+            if (!theme.disabled) {
+                next += 1;
+            }
             cards.push(theme);
-            modifiers[theme.name] = config.modifier_ratings[i];
         }
 
         if (!objectSize(this.data.summary) && !this.data.summary_pending) {
@@ -473,9 +503,12 @@ var MapData = React.createClass({
                     this.component.data.summary = data.summary;
                     this.component.data.summary_pending = false;
                     if (config.debug) {
-                        console.log('Got summary data, getting data')
+                        console.log('Got summary data, getting data', this.component)
                     }
-                    this.component.getData(props); // The latest version, not the original
+                    this.component.getData(this.component.props); // Whatever is set now (for some reason props doesn't work?)
+                    if (config.debug) {
+                        console.log('Called getData', this.component.props.query.bbox)
+                    }
                     // this.component.throttledSetState(this.component, {data_updated: new Date()});
                 }.bind({component:this}),
                 function(err){
@@ -491,12 +524,17 @@ var MapData = React.createClass({
             priority_order: priority_order,
             cards: cards,
             modifiers: modifiers,
+            disabled_themes: disabled_themes,
         })
+        var weight=0;
+        if (zoom < 15) {
+            weight = 1;
+        }
         if (!(bbox && zoom && this.data.map && this.data.summary)) {
-            console.log('Not processing the bbox yet'); //, bbox, this.data.map, this.data.summary, this.data.bbox);
+            console.log('Not processing the bbox yet', bbox, this.data.map, this.data.summary, this.data.bbox);
         } else {
-            if (this.data.budget !== budget || this.data.priority !== priority_order.join('|')) {
-                console.log('The budget or priority have changed, re-colour the polygons');
+            if (this.data.budget !== budget || this.data.priority !== priority_order.join('|') || this.data.disabled_themes !== disabled_themes.join('|')) {
+                console.log('The budget, disabled themes or priority have changed, re-colour the polygons');
                 for (var i=0; i<this.data.lsoas.length; i++) {
                     this.set_colors(
                         this.data.lsoa_layers[this.data.lsoas[i]],
@@ -504,12 +542,14 @@ var MapData = React.createClass({
                         // Use the latest budget and props, not the ones at the time of the request
                         budget,
                         config.colors,
-                        config.max, 
-                        modifiers
+                        config.max,
+                        modifiers,
+                        weight
                     );
                 };
                 this.data.budget = budget;
                 this.data.priority = priority_order.join('|')
+                this.data.disabled_themes = disabled_themes.join('|')
             }
             console.log(this.data.bbox, bbox.join('|')+'|'+zoom);
             if (this.data.bbox === bbox.join('|')+'|'+zoom) {
@@ -552,19 +592,20 @@ var MapData = React.createClass({
                             var lsoa = lsoas[i]
                             // console.log('Inspecting ' + lsoa);
                             if (this.component.data.lsoa_layers[lsoa]) {
-                                console.log('Setting the colors for ' + lsoa); 
+                                console.log('Setting the colors for ' + lsoa);
                                 this.component.set_colors(
                                     this.component.data.lsoa_layers[lsoa],
                                     this.component.data.summary,
                                     // Use the latest budget and props, not the ones at the time of the request
                                     budget,
                                     config.colors,
-                                    config.max, 
-                                    modifiers
+                                    config.max,
+                                    modifiers,
+                                    weight
                                 );
                                 console.log('Adding ' + lsoa + ' to the map');
                                 this.component.data.map.addLayer(this.component.data.lsoa_layers[lsoa]);
-                                counter += 1; 
+                                counter += 1;
                             } else {
                                 missing_lsoa_layers.push(lsoa);
                                 if (this.component.data.pending_lsoas.indexOf(lsoa) === -1) {
@@ -586,11 +627,22 @@ var MapData = React.createClass({
                         console.log('Missing ' + missing_lsoa_layers.length + ' layers');
                         console.log(missing_lsoa_layers.length - not_pending.length + ' layers are already pending');
                         console.log('Need to fetch ' + not_pending.length + ' layers');
+                        //if (not_pending.length == 0 && this.component.data.percentage == 100 ) {
+                        //    // Handle zooming
+                        //    this.forceUpdate();
+                        //}
                         this.component.data.need_fetching_lsoas = not_pending;
-                        if (this.component.data.need_fetching_lsoas === 0) {
+                        if (this.component.data.need_fetching_lsoas == 0) {
                             console.log('Nothing to fetch');
+                            this.component.data.percentage = -1;
+                            this.forceUpdate();
                         } else {
-                            this.component.data.percentage = Math.floor(100*(1-(this.component.data.need_fetching_lsoas.length/this.component.data.lsoas.length)));
+                            var nextPercentage = Math.floor(100*(1-(this.component.data.need_fetching_lsoas.length/this.component.data.lsoas.length)));
+                            if (nextPercentage !== 100) {
+                                this.component.data.percentage = nextPercentage;
+                            } else {
+                                this.component.data.percentage = 99;
+                            }
                             //this.component.forceUpdate(); //setState({percentage: 0});
                             console.log('Fetching the first '+config.parallel_loads+' lsoas that aren\'t in pending_lsoas and adding these to pending_lsoas');
                             for (var i=0; i<config.parallel_loads; i++) {
@@ -600,7 +652,7 @@ var MapData = React.createClass({
                                 } else {
                                     this.component.data.pending_lsoas.push(lsoa);
                                     this.component.data.pending_lsoas_date[lsoa] = new Date();
-                                    console.log('Requesting geometry for '+lsoa); 
+                                    console.log('Requesting geometry for '+lsoa);
 
                                     var make_success = function () {
                                         return function(geometry) {
@@ -624,7 +676,7 @@ var MapData = React.createClass({
                                                     console.log('Set the layer '+ lsoa);
                                                 }
                                                 this.component.data.pending_lsoas.splice(index, 1);
-                                            } else { 
+                                            } else {
                                                 // Another call has already fulfilled the lsoa
                                                 if (this.component.data.pending_lsoas_date[lsoa]) {
                                                     console.error('The pending lsoa date was not missing, even though the request was fulfilled by another promise, carrying on anyway')
@@ -639,7 +691,7 @@ var MapData = React.createClass({
                                             console.log('Need to display a total of '+this.component.data.lsoas.length+' lsoas');
                                             for (var i=0; i<this.component.data.lsoas.length; i++) {
                                                 if (lsoa == this.component.data.lsoas[i]) {
-                                                    console.log('The lsoa ' + lsoa + ' is still one we need to display'); 
+                                                    console.log('The lsoa ' + lsoa + ' is still one we need to display');
                                                     console.log('Setting the colors for ' + lsoa);
                                                     this.component.set_colors(
                                                         this.component.data.lsoa_layers[lsoa],
@@ -647,8 +699,9 @@ var MapData = React.createClass({
                                                         // Use the latest props for the colors, not the ones at the time of the request.
                                                         budget,
                                                         config.colors,
-                                                        config.max, 
-                                                        modifiers
+                                                        config.max,
+                                                        modifiers,
+                                                        weight
                                                     );
                                                     console.log('Adding ' + lsoa + ' to the map');
                                                     this.component.data.map.addLayer(this.component.data.lsoa_layers[lsoa]);
@@ -661,6 +714,20 @@ var MapData = React.createClass({
                                                         if (this.component.data.need_fetching_lsoas.length === 0) {
                                                             console.log('Fetching data complete, setting the percentage to 100, nothing else to do.');
                                                             this.component.data.percentage = 100;
+                                                            this.component.data.percentage_counter += 1;
+                                                            var onTimeout = function() {
+                                                                console.log(this.counter, this.component.data.percentage, this.component.data.percentage_counter);
+                                                                if (this.component.data.percentage_counter == this.counter) {
+                                                                    console.log('Setting percentage to -1');
+                                                                    this.component.data.percentage = -1;
+                                                                    this.component.forceUpdate();
+                                                                }
+                                                            }.bind({
+                                                                component: this.component,
+                                                                counter: this.component.data.percentage_counter+0
+                                                            })
+                                                            setTimeout(onTimeout, 250)
+                                                            console.log('Set the timeout')
                                                             this.component.forceUpdate(); //setState({percentage: -1})
                                                             // this.forceUpdate();
                                                             // if all are completed:
@@ -675,12 +742,16 @@ var MapData = React.createClass({
                                                             console.log('Still '+ this.component.data.need_fetching_lsoas.length +' more losas to fetch...')// , this.component.data.completed, this.component.data.lsoas.length);
                                                             // if (this.components.data.lsoas.length !== 0) {
                                                                  var new_percentage = Math.floor(100*(1-(this.component.data.need_fetching_lsoas.length/this.component.data.lsoas.length)));
-                                                                 if (new_percentage === 100 || new_percentage > this.component.data.percentage + 6) {
-                                                                     this.component.data.percentage = new_percentage;
-                                                                     console.log('The percentage has changed enough to be worth a re-render. Now: '+new_percentage); 
-                                                                     this.component.forceUpdate(); //setState({percentage: new_percentage})
+                                                                 if (new_percentage !== 100) {
+                                                                     if (new_percentage > this.component.data.percentage + 6) {
+                                                                         this.component.data.percentage = new_percentage;
+                                                                         console.log('The percentage has changed enough to be worth a re-render. Now: '+new_percentage);
+                                                                         this.component.forceUpdate(); //setState({percentage: new_percentage})
+                                                                     } else {
+                                                                         console.log('Not updating the percentage this time');
+                                                                     }
                                                                  } else {
-                                                                     console.log('Not updating the percentage this time');
+                                                                     this.component.data.percentage = 99;
                                                                  }
                                                             // }
                                                             // At this point we might need to fetch some more
@@ -694,7 +765,7 @@ var MapData = React.createClass({
                                                                         } else {
                                                                             this.component.data.pending_lsoas.push(lsoa);
                                                                             this.component.data.pending_lsoas_date[lsoa] = new Date();
-                                                                            console.log('Requesting geometry for '+lsoa); 
+                                                                            console.log('Requesting geometry for '+lsoa);
                                                                             getGeometry(lsoa).then(
                                                                                 make_success().bind({'component': this.component, 'lsoa': lsoa, original_bbox: this.original_bbox}),
                                                                                 failure
@@ -702,11 +773,25 @@ var MapData = React.createClass({
                                                                         }
                                                                     }
                                                                     if (this.component.data.need_fetching_lsoas.length === 0) {// && this.component.data.percentage !== -1) {
-                                                                        this.component.data.percentage = 100;
+                                                                        this.component.data.percentage = 99;
+                                                                        this.component.data.percentage_counter += 1;
+                                                                        var onTimeout = function() {
+                                                                            console.log(this.counter, this.component.data.percentage, this.component.data.percentage_counter);
+                                                                            if (this.component.data.percentage_counter == this.counter) {
+                                                                                console.log('Setting percentage to -1');
+                                                                                this.component.data.percentage = -1;
+                                                                                this.component.forceUpdate();
+                                                                            }
+                                                                        }.bind({
+                                                                            component: this.component,
+                                                                            counter: this.component.data.percentage_counter+0
+                                                                        })
+                                                                        setTimeout(onTimeout, 1000)
+                                                                        console.log('Set the timeout')
                                                                         this.component.forceUpdate();
                                                                     }
                                                                 } else {
-                                                                    console.log('Not a multiple of '+config.parallel_loads+', so we don\'t trigger the next fetch'); 
+                                                                    console.log('Not a multiple of '+config.parallel_loads+', so we don\'t trigger the next fetch');
                                                                 }
                                                             }.bind(this)
                                                                 // if completed is a multiple of 4 and there are more to get:
@@ -759,8 +844,8 @@ var Panel = React.createClass({
             )
         } else {
             var content = (
-                <div> 
-                    <BudgetSlider 
+                <div>
+                    <BudgetSlider
                         budget={this.props.budget}
                         params={this.props.params}
                         query={this.props.query}
@@ -769,12 +854,13 @@ var Panel = React.createClass({
                         step={10}
                     />
                     <br />
-            
+
                     <p>What is most important to you when moving to a new area?</p>
                     <p><em>(tip: drag the boxes up &amp; down the list)</em></p>
-            
+
                     <Priorities
                         cards={this.props.cards}
+                        disabled_themes={this.props.disabled_themes}
                         params={this.props.params}
                         query={this.props.query}
                     />
@@ -783,21 +869,38 @@ var Panel = React.createClass({
         }
         var loading = '';
         if (this.props.percentage !== -1) {
-            loading = '('+this.props.percentage+'%)';
+            loading = (
+                <div
+                    className='leaflet-bar'
+                    style={{
+                        zIndex: 5,
+                        position: 'fixed',
+                        background: '#fff',
+                        bottom: '26px',
+                        right: '40px',
+                        padding: '5px',
+                        'font-size': '11px',
+                    }}
+                >
+                    Downloading... {this.props.percentage+'%'}
+                </div>
+             )
         }
         return (
-            <div className="settings" style={{ 
-                height: 380, //window.innerHeight - 250,
-            }}>
-    
-                <h2 style={{marginBottom: '19px', marginTop: '0px'}}>MyLondon {loading}</h2>
-    
-                <form onSubmit={this.onSearch}>
-                    <Input ref="postcode" type='search' placeholder='Postcode' />
-                </form>
+            <div>
+               {loading}
+               <div className="settings" style={{
+                   height: 400, //window.innerHeight - 250,
+               }}>
+                   <h2 style={{marginBottom: '19px', marginTop: '0px'}}><img src="/http/final-800.png" style={{width: '100%'}}/></h2>
 
-                {content} 
-            </div>
+                   <form onSubmit={this.onSearch}>
+                       <Input ref="postcode" type='search' placeholder='Postcode' />
+                   </form>
+
+                   {content}
+               </div>
+           </div>
         )
     }
 });
@@ -816,7 +919,7 @@ var Main = React.createClass({
     },
 
     hideModal() {
-        var query = objectAssign({}, this.props.query, {oa: undefined});
+        var query = objectAssign({}, this.props.query, {oa: undefined, lsoa: undefined});
         this.context.router.transitionTo('map', this.props.params, query);
     },
 
@@ -857,6 +960,7 @@ var Main = React.createClass({
                     params={this.props.params}
                     query={this.props.query}
                     cards={this.props.cards}
+                    disabled_themes={this.props.disabled_themes}
                     budget={this.props.budget}
                     zoom={this.props.zoom}
                     onChangePostcode={this.props.onChangePostcode}
@@ -869,40 +973,88 @@ var Main = React.createClass({
 
 
 var DetailPopup = React.createClass({
+    componentDidMount() {
+            this.hackModal();
+    },
+    componentDidUpdate() {
+            this.hackModal();
+    },
+
+    hackModal() {
+        var modal = d3.select(".modal-body");
+        if ( ! modal || modal.classed("patched") ) {
+            return;
+        }
+        modal.classed("patched", true);
+
+        var stats = [
+            { "name" : "Green Space",
+              "value" : Math.round( this.props.summary[this.props.oa].green_space * 100 ),
+              "colour": '#3fad46',
+              "icon": "logo-green-space.png",
+            },
+            { "name" : "Public Transport",
+              "value" : Math.round( this.props.summary[this.props.oa].transport * 100 ),
+              "colour": '#5bc0de',
+              "icon": "logo-transport.png",
+            },
+            { "name" : "Schools",
+              "value" : Math.round( this.props.summary[this.props.oa].schools * 100 ),
+              "colour": '#f0ad4e',
+              "icon": "logo-schools.png",
+            },
+            { "name" : "Safety",
+              "value" : Math.round( this.props.summary[this.props.oa].safety * 100 ),
+              "colour": '#d9534f',
+              "icon": "logo-crime.png",
+            }
+        ];
+
+        modal.html("");
+        var boxes = modal.selectAll( ".box" ).data(stats)
+            .enter()
+            .append("div")
+            .classed("box", true);
+        boxes.append("img")
+            .classed("icon", true)
+            .attr("src", function(d) {
+                return '/http/'+d['icon'];
+             });
+        boxes.append("div")
+            .classed("one", true)
+            .html(function(d) {
+                return d['name']
+            });
+        boxes.append("div")
+            .classed("two", true)
+            .html(function(d) {
+                return d['value']+"%" }
+            );
+        boxes.append("div")
+            .classed("three", true)
+            .append("div")
+            .classed("inner",true)
+            .style("background-color", function(d) {
+                return d['colour']
+            })
+            .transition()
+            .style("width", function(d) {
+                return (d['value']*2.4)+"px"
+             })
+            .duration(600);
+        boxes.append("div")
+            .classed("clearfix", true);
+
+    },
+
     render: function() {
         // console.log(this.props.summary[this.props.oa])
-        if (!this.props.summary[this.props.oa]) {
+        if (!this.props.summary || !this.props.summary[this.props.oa]) {
             return null;
         } else {
             return (
                 <Modal {...this.props} bsStyle="primary" title={'OA: '+this.props.query.oa} animation={false} backdrop={true}>
                     <div className="modal-body">
-                        <table>
-                          <tr>
-                              <td className="key">LSOA</td>
-                              <td>{this.props.lsoa}</td>
-                          </tr>
-                          <tr>
-                              <td className="key">Average rent per week:</td>
-                              <td>&pound;{this.props.summary[this.props.oa].rent}</td>
-                          </tr>
-                          <tr>
-                              <td className="key">Green Space:</td>
-                              <td>{rating_to_string[this.props.summary[this.props.oa].green_space]}</td>
-                          </tr>
-                          <tr>
-                              <td className="key">Transport:</td>
-                              <td>{rating_to_string[this.props.summary[this.props.oa].transport]}</td>
-                          </tr>
-                          <tr>
-                              <td className="key">Crime:</td>
-                              <td>{rating_to_string[this.props.summary[this.props.oa].transport]}</td>
-                          </tr>
-                          <tr>
-                              <td className="key">Schools:</td>
-                              <td>{rating_to_string[this.props.summary[this.props.oa].schools]}</td>
-                          </tr>
-                        </table>
                     </div>
                     <div className="modal-footer">
                         <Button onClick={this.props.onRequestHide}>Close</Button>
@@ -949,3 +1101,4 @@ Router.run(routes, function (Handler, router_state) {
     );
 });
 
+module.exports = routes;

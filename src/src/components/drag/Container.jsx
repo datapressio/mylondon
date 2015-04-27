@@ -48,12 +48,21 @@ const Container = React.createClass({
         return (
             <div>
                 {this.state.cards.map(card => {
+                    var disabled = false;
+                    if (this.props.disabled_themes.indexOf(card.id) !== -1) {
+                        var disabled = true;
+                    }
+                    // console.log('zzzzzzzzzzzzzzzzzzzz', this.props.disabled_themes, card.id, disabled)
                     return (
                         <Card key={card.id}
                             id={card.id}
                             text={card.text}
                             value={card.value}
                             icon={card.icon}
+                            disabled={disabled}
+                            disabled_themes={this.props.disabled_themes}
+                            params={this.props.params}
+                            query={this.props.query}
                             moveCard={this.moveCard} />
                     );
                 })}

@@ -96,8 +96,6 @@ var Map = React.createClass({
         L.control.zoom({
              position:'bottomright'
         }).addTo(map);
-        // Callback to the parent to set the map.
-        this.props.set_map(map);
         // Update the URL so that the bbox appears
         this.setState(
             {
@@ -107,6 +105,8 @@ var Map = React.createClass({
                 this.updateUrl();
             }.bind(this)
         );
+        // Callback to the parent to set the map.
+        this.props.set_map(map);
         this.data = {
             layers: {},
             last_updated_props: {},

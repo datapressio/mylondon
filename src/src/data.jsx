@@ -1,7 +1,7 @@
 var max = 1; //2500;
 var raw_data = {
     max: max,
-    parallel_loads: 1, //4
+    parallel_loads: 4,
     modifier_ratings: [1.5, 1, 0.75, 0.5],
     throttle: 250,
     debug: true,
@@ -71,25 +71,25 @@ var raw_data = {
             id: 1,
             text: 'Public Transport',
             name: 'transport',
-            icon: 'fa-subway',
+            icon: '/http/logo-transport.png',
         },
         2: {
             id: 2,
             text: 'Green Space',
             name: 'green_space',
-            icon: 'fa-tree',
+            icon: '/http/logo-green-space.png',
         }, 
         3: {
             id: 3,
             text: 'Crime/Safety',
-            icon: 'fa-gavel',
             name: 'crime',
+            icon: '/http/logo-crime.png',
         }, 
         4: {
             id: 4,
             text: 'Schools',
-            icon: 'fa-graduation-cap',
             name: 'schools',
+            icon: '/http/logo-schools.png',
         }
     },
 }
