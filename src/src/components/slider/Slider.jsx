@@ -1,5 +1,4 @@
 var React = require('react'),
-    jQuery = require('jquery'),
     BootstrapSlider = require('bootstrap-slider');
 
 require('../../../node_modules/bootstrap-slider/dist/css/bootstrap-slider.min.css');

@@ -2,7 +2,8 @@ var React = require('react');
 var Router = require('react-router');
 var config = require('../../data.jsx')
 require('./map.css');
-require('leaflet-minimap');
+// Doesn't load as simply leaflet-minimap
+require('../../../node_modules/leaflet-minimap/dist/Control.MiniMap.min.js');
 var objectAssign = require('react/lib/Object.assign');
 var throttle = require('../throttle');
 

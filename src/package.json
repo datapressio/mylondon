@@ -6,44 +6,40 @@
     "build": "./node_modules/.bin/webpack --optimize-minimize --optimize-dedupe",
     "watch": "./node_modules/.bin/webpack --devtool inline-source-map --watch"
   },
-  "devDependencies": {
-    "jsx-loader": "0.x.x",
-    "react": "0.13.x",
-    "webpack": "1.x.x",
-    "babel": "x.x.x",
-    "babel-core": "x.x.x",
-    "babel-loader": "x.x.x",
-    "react-hot-loader": "x.x.x",
-    "style-loader": "x.x.x",
-    "json-loader": "x.x.x",
-    "file-loader": "x.x.x",
-    "url-loader": "x.x.x",
-    "jquery": "x.x.x",
-    "css-loader": "x.x.x",
-
-
-
-"karma": "x.x.x",
-"karma-cli": "x.x.x",
-"karma-mocha": "x.x.x",
-"karma-webpack": "x.x.x",
-"karma-sourcemap-loader": "x.x.x",
-"karma-chrome-launcher": "x.x.x",
-"expect": "x.x.x"
-
-
-
-
-  },
   "dependencies": {
+    "bootstrap": "3.3.4",
     "bootstrap-slider": "4.5.2",
-    "es6-promise": "^1.0.0",
-    "leaflet": "x.x.x",
-    "leaflet-minimap": "x.x.x",
-    "react-router": "0.x.x",
-    "react-bootstrap": "x.x.x",
-    "react-bootstrap-slider": "x.x.x",
-    "react-dnd": "x.x.x",
-    "superagent": "x.x.x"
+    "d3": "3.5.5",
+    "es6-promise": "1.0.0",
+    "jquery": "2.1.4",
+    "leaflet": "0.7.3",
+    "leaflet-minimap": "2.1.0",
+    "react": "0.13.1",
+    "react-bootstrap": "0.20.2",
+    "react-bootstrap-slider": "0.0.5",
+    "react-dnd": "0.9.8",
+    "react-router": "0.13.2",
+    "superagent": "1.1.0"
+  },
+  "devDependencies": {
+    "babel-core": "5.0.12",
+    "babel-loader": "5.0.0",
+    "babel": "5.0.12",
+    "css-loader": "0.9.1",
+    "expect": "1.6.0",
+    "file-loader": "0.8.1",
+    "json-loader": "0.5.1",
+    "jsx-loader": "0.13.1",
+    "karma": "0.12.31",
+    "karma-chrome-launcher": "0.1.7",
+    "karma-cli": "0.0.4",
+    "karma-mocha": "0.1.10",
+    "karma-sourcemap-loader": "0.3.4",
+    "karma-webpack": "1.5.0",
+    "mocha": "2.2.4",
+    "react-hot-loader": "1.2.4",
+    "style-loader": "0.9.0",
+    "url-loader": "0.5.5",
+    "webpack": "1.8.2"
   }
 }

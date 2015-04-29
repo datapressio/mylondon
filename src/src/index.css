@@ -36,3 +36,45 @@ table td.key {
     width: 200px;
     font-weight: bold;
 }
+
+.theme {
+}
+
+.theme .icon {
+    height: 70px;
+    width: 70px;
+    float: left;
+}
+.theme .name {
+    height: 70px;
+    width: 170px;
+    float: left;
+    text-align: right;
+    line-height: 70px;
+}
+.theme .percentage {
+    height: 70px;
+    width: 66px;
+    float: left;
+    text-align: center;
+    font-weight: bold;
+    line-height: 70px;
+}
+.theme .bar {
+    height: 40px;
+    margin-top: 15px;
+    width: 240px;
+    float: left;
+    background: #f0f0f0;
+}
+.theme .bar .color {
+    height: 40px;
+}
+.theme .clearfix {
+    clear: both;
+    padding-bottom: 15px;
+}
+
+.tab-content {
+    padding-top: 20px;
+}

@@ -16,6 +16,7 @@ module.exports = {
       { test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "file-loader" },
       { test: /\.jsx$/, loaders: ['react-hot-loader', 'babel'], exclude: /node_modules/ },
       { test: /\.js$/, loaders: ['react-hot-loader', 'babel'], exclude: /node_modules/ },
+      { test: /\.png$/, loaders: ["url-loader?limit=10000"], exclude: /node_modules/},
       { test: /\.json$/, loaders: ['json'], exclude: /node_modules/ }
     ]
   },

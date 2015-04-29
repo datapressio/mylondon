@@ -75,7 +75,7 @@ var raw_data = {
         },
         2: {
             id: 2,
-            text: 'Green Space',
+            text: 'Number of Green Spaces',
             name: 'green_space',
             icon: '/http/logo-green-space.png',
         }, 

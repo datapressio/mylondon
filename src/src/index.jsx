@@ -25,6 +25,12 @@ Cheating on:
 */
 
 var L = require('leaflet');
+var d3 = require('d3');
+// These fail due to dependant images not loading, we include the CSS in the HTML instead.
+// require('../node_modules/leaflet/dist/leaflet.css');
+// require('../node_modules/leaflet-minimap/dist/Control.MiniMap.min.css');
+require('../node_modules/react-bootstrap-slider/node_modules/bootstrap/dist/css/bootstrap.css');
+
 
 function objectSize(obj) {
     var size = 0, key;
@@ -57,7 +63,10 @@ var Grid = Bootstrap.Grid,
     OverlayMixin = Bootstrap.OverlayMixin,
     Modal = Bootstrap.Modal,
     ModalTrigger = Bootstrap.ModalTrigger,
-    Row = Bootstrap.Row;
+    Row = Bootstrap.Row,
+    TabbedArea = Bootstrap.TabbedArea,
+    TabPane = Bootstrap.TabPane;
+
 
 var throttle = require('./components/throttle');
 
@@ -71,10 +80,43 @@ var config = require('./data.jsx')
 
 var request = require('superagent');
 
-//var HOST = 'localhost:8000'
+var HOST = 'localhost:8000'
 //var HOST = '192.168.0.4:8000'
 //var HOST = '10.14.3.68:8000'
-var HOST = 's26.datapress.io'
+//var HOST = 's26.datapress.io'
+
+
+var getTimeToBank = function(oa) {
+    return new Promise(function (resolve, reject) {
+        request.get('http://api.datapress.io/api/3/action/datastore_search')
+        .query({
+            resource_id: 'MyLondon_traveltime_to_Bank_station_OA',
+            filters: JSON.stringify({OA11CD: oa})
+        })
+        // .withCredentials()
+        // .set('Authorization', 'Bearer AuthedAuthedAuthedAuthedAuthed')
+        .end(function (err, res) {
+            if (err) {
+                console.error('Error:' + err);
+                reject(err);
+            } else if (!res.ok) {
+                console.error('Not OK');
+                reject(res.ok);
+            } else {
+                console.log(res.body)
+                if (!res.body.success) {
+                    console.error('Failure reported in JSON');
+                    reject(res.body);
+                } else {
+                    window.result = res.body.result.records[0]
+                    resolve(res.body.result.records[0]);
+                }
+            }
+        });
+    });
+};
+// window.getTimeToBank = getTimeToBank;
+
 
 var getLSOAs = function(bbox) {
     if (config.debug) {
@@ -417,10 +459,10 @@ var MapData = React.createClass({
                         // console.log('Budget less than rent in '+oa+', setting red');
                         layer.oas[oa].setStyle({
                             stroke: true,
-                            color: '#0033ff',
+                            color: '#0033ff', //'#d9534f', // '#2E0854', // '#FFFF00', //'#d9534f', //'#0033ff',
                             weight: weight,
                             fillOpacity: (0.3),
-                            //opacity: 0.05,
+                            opacity: 0.15,
                         });
                     } else {
                         // console.log('Calculating rank for '+oa, this.calculate_rank);
@@ -449,6 +491,7 @@ var MapData = React.createClass({
     },
 
     getData(props) {
+        // Parse URL information
         var zoom = parseInt(props.query.zoom || '15')
         var modal = props.query.oa || null;
         var budget = parseInt(props.query.budget || '450')
@@ -491,6 +534,7 @@ var MapData = React.createClass({
             cards.push(theme);
         }
 
+        // Only start fetching the summary data if we haven't got it or started fetching it yet
         if (!objectSize(this.data.summary) && !this.data.summary_pending) {
             if (config.debug) {
                 console.log('Fetching summary data', objectSize(this.data.summary), this.data.summary_pending);
@@ -516,6 +560,8 @@ var MapData = React.createClass({
                 }.bind({component: this})
             );
         }
+
+        // Perform a render with the information we do have to get the map rendering
         this.setState({
             zoom: zoom,
             modal: modal,
@@ -526,305 +572,320 @@ var MapData = React.createClass({
             modifiers: modifiers,
             disabled_themes: disabled_themes,
         })
+
+        // Choose how thick the lines around OAs should be based on the zoom level
         var weight=0;
         if (zoom < 15) {
             weight = 1;
         }
+
+        // If we don't have all the information we need yet, there is no more to do.
         if (!(bbox && zoom && this.data.map && this.data.summary)) {
             console.log('Not processing the bbox yet', bbox, this.data.map, this.data.summary, this.data.bbox);
-        } else {
-            if (this.data.budget !== budget || this.data.priority !== priority_order.join('|') || this.data.disabled_themes !== disabled_themes.join('|')) {
-                console.log('The budget, disabled themes or priority have changed, re-colour the polygons');
-                for (var i=0; i<this.data.lsoas.length; i++) {
-                    this.set_colors(
-                        this.data.lsoa_layers[this.data.lsoas[i]],
-                        this.data.summary,
-                        // Use the latest budget and props, not the ones at the time of the request
-                        budget,
-                        config.colors,
-                        config.max,
-                        modifiers,
-                        weight
-                    );
-                };
-                this.data.budget = budget;
-                this.data.priority = priority_order.join('|')
-                this.data.disabled_themes = disabled_themes.join('|')
-            }
-            console.log(this.data.bbox, bbox.join('|')+'|'+zoom);
-            if (this.data.bbox === bbox.join('|')+'|'+zoom) {
-                console.log('No bounding box or zoom change, no changes to make to which polygons are displayed');
-                return;
-            }
-            if (zoom < 13) {
-                console.log('Too zoomed out, removing all layers');
-                this.data.map.eachLayer(function (layer) {
-                    if (layer.lsoa) {
-                        this.data.map.removeLayer(layer);
-                    }
-                }.bind(this));
-                this.data.bbox = bbox.join('|')+'|'+zoom;
-                this.data.lsoas = [];
-                this.data.need_fetching_lsoas = [];
-                //this.data.pending_lsoas = [];
-                //this.data.pending_lsoas_date = {};
-                this.data.completed = null;
-                this.data.percentage = -1;
-                return;
-            }
+            return
+        }
+
+        // If we are so zoomed out there is nothing to render, stop now.
+        if (zoom < 13) {
+            console.log('Too zoomed out, removing all layers');
+            this.data.map.eachLayer(function (layer) {
+                if (layer.lsoa) {
+                    this.data.map.removeLayer(layer);
+                }
+            }.bind(this));
             this.data.bbox = bbox.join('|')+'|'+zoom;
-            console.log('Setting store bbox data for ', this.data.bbox);
-            getLSOAs(bbox).then(
-                function (lsoas) {
-                    if (this.original_bbox !== this.component.data.bbox) {
-                        console.log('bbox doesn\'t match, ignoring the lsoa list just received');
-                    } else {
-                        console.log('The bbox has not changed since the lsoa list was requested, we can start processing lsoas');
-                        console.log('Setting store completed to 0');
-                        this.component.data.completed = 0;
-                        console.log('Setting the lsoas we need', lsoas);
-                        this.component.data.lsoas = lsoas;
-                        console.log('Adding any layers we already have that we now need');
-                        var counter = 0;
-                        var missing_lsoa_layers = [];
-                        var not_pending = [];
-                        for (var i=0; i<lsoas.length; i++) {
-                            var lsoa = lsoas[i]
-                            // console.log('Inspecting ' + lsoa);
-                            if (this.component.data.lsoa_layers[lsoa]) {
-                                console.log('Setting the colors for ' + lsoa);
-                                this.component.set_colors(
-                                    this.component.data.lsoa_layers[lsoa],
-                                    this.component.data.summary,
-                                    // Use the latest budget and props, not the ones at the time of the request
-                                    budget,
-                                    config.colors,
-                                    config.max,
-                                    modifiers,
-                                    weight
-                                );
-                                console.log('Adding ' + lsoa + ' to the map');
-                                this.component.data.map.addLayer(this.component.data.lsoa_layers[lsoa]);
-                                counter += 1;
-                            } else {
-                                missing_lsoa_layers.push(lsoa);
-                                if (this.component.data.pending_lsoas.indexOf(lsoa) === -1) {
-                                    not_pending.push(lsoa);
-                                }
+            this.data.lsoas = [];
+            this.data.need_fetching_lsoas = [];
+            //this.data.pending_lsoas = [];
+            //this.data.pending_lsoas_date = {};
+            this.data.completed = null;
+            this.data.percentage = -1;
+            return;
+        }
+
+        // Only re-colour the polygons if something that would cause their colour to change has changed
+        if (this.data.budget !== budget || this.data.priority !== priority_order.join('|') || this.data.disabled_themes !== disabled_themes.join('|')) {
+            console.log('The budget, disabled themes or priority have changed, re-colour the polygons');
+            for (var i=0; i<this.data.lsoas.length; i++) {
+                this.set_colors(
+                    this.data.lsoa_layers[this.data.lsoas[i]],
+                    this.data.summary,
+                    // Use the latest budget and props, not the ones at the time of the request
+                    budget,
+                    config.colors,
+                    config.max,
+                    modifiers,
+                    weight
+                );
+            };
+            this.data.budget = budget;
+            this.data.priority = priority_order.join('|')
+            this.data.disabled_themes = disabled_themes.join('|')
+        }
+
+
+        // If nothing that would affect which polygons are displayed has changed, stop now
+        console.log(this.data.bbox, bbox.join('|')+'|'+zoom);
+        if (this.data.bbox === bbox.join('|')+'|'+zoom) {
+            console.log('No bounding box or zoom change, no changes to make to which polygons are displayed');
+            return;
+        }
+
+        // Otherwise, find out which LSOAs overlap the current map view, fetch and render the OA polygons they contain
+        // (since LSOAs are larger than OAs, we are fetching more polygons than we actually need, but this means they
+        //  are ready when the user starts to pan around the map)
+        this.data.bbox = bbox.join('|')+'|'+zoom;
+        console.log('Setting store bbox data for ', this.data.bbox);
+        getLSOAs(bbox).then(
+            function (lsoas) {
+                if (this.original_bbox !== this.component.data.bbox) {
+                    console.log('bbox doesn\'t match, ignoring the lsoa list just received');
+                } else {
+                    console.log('The bbox has not changed since the lsoa list was requested, we can start processing lsoas');
+                    console.log('Setting store completed to 0');
+                    this.component.data.completed = 0;
+                    console.log('Setting the lsoas we need', lsoas);
+                    this.component.data.lsoas = lsoas;
+                    console.log('Adding any layers we already have that we now need');
+                    var counter = 0;
+                    var missing_lsoa_layers = [];
+                    var not_pending = [];
+                    for (var i=0; i<lsoas.length; i++) {
+                        var lsoa = lsoas[i]
+                        // console.log('Inspecting ' + lsoa);
+                        if (this.component.data.lsoa_layers[lsoa]) {
+                            console.log('Setting the colors for ' + lsoa);
+                            this.component.set_colors(
+                                this.component.data.lsoa_layers[lsoa],
+                                this.component.data.summary,
+                                // Use the latest budget and props, not the ones at the time of the request
+                                budget,
+                                config.colors,
+                                config.max,
+                                modifiers,
+                                weight
+                            );
+                            console.log('Adding ' + lsoa + ' to the map');
+                            this.component.data.map.addLayer(this.component.data.lsoa_layers[lsoa]);
+                            counter += 1;
+                        } else {
+                            missing_lsoa_layers.push(lsoa);
+                            if (this.component.data.pending_lsoas.indexOf(lsoa) === -1) {
+                                not_pending.push(lsoa);
                             }
                         }
-                        console.log('Put ' + counter + ' layers on the map');
-                        console.log('Removing the layers from the map that we no longer need');
-                        // Remove layers we no longer need
-                        counter = 0;
-                        this.component.data.map.eachLayer(function (layer) {
-                            if (layer.lsoa && this.lsoas.indexOf(layer.lsoa) === -1) {
-                                this.component.data.map.removeLayer(layer);
-                                this.counter += 1;
-                            }
-                        }.bind({component: this.component, lsoas: lsoas, counter: counter}));
-                        console.log('Removed '+counter+' layers from the map');
-                        console.log('Missing ' + missing_lsoa_layers.length + ' layers');
-                        console.log(missing_lsoa_layers.length - not_pending.length + ' layers are already pending');
-                        console.log('Need to fetch ' + not_pending.length + ' layers');
-                        //if (not_pending.length == 0 && this.component.data.percentage == 100 ) {
-                        //    // Handle zooming
-                        //    this.forceUpdate();
-                        //}
-                        this.component.data.need_fetching_lsoas = not_pending;
-                        if (this.component.data.need_fetching_lsoas == 0) {
-                            console.log('Nothing to fetch');
-                            this.component.data.percentage = -1;
-                            this.forceUpdate();
+                    }
+                    console.log('Put ' + counter + ' layers on the map');
+                    console.log('Removing the layers from the map that we no longer need');
+                    // Remove layers we no longer need
+                    counter = 0;
+                    this.component.data.map.eachLayer(function (layer) {
+                        if (layer.lsoa && this.lsoas.indexOf(layer.lsoa) === -1) {
+                            this.component.data.map.removeLayer(layer);
+                            this.counter += 1;
+                        }
+                    }.bind({component: this.component, lsoas: lsoas, counter: counter}));
+                    console.log('Removed '+counter+' layers from the map');
+                    console.log('Missing ' + missing_lsoa_layers.length + ' layers');
+                    console.log(missing_lsoa_layers.length - not_pending.length + ' layers are already pending');
+                    console.log('Need to fetch ' + not_pending.length + ' layers');
+                    //if (not_pending.length == 0 && this.component.data.percentage == 100 ) {
+                    //    // Handle zooming
+                    //    this.forceUpdate();
+                    //}
+                    this.component.data.need_fetching_lsoas = not_pending;
+                    if (this.component.data.need_fetching_lsoas == 0) {
+                        console.log('Nothing to fetch');
+                        this.component.data.percentage = -1;
+                        this.forceUpdate();
+                    } else {
+                        var nextPercentage = Math.floor(100*(1-(this.component.data.need_fetching_lsoas.length/this.component.data.lsoas.length)));
+                        if (nextPercentage !== 100) {
+                            this.component.data.percentage = nextPercentage;
                         } else {
-                            var nextPercentage = Math.floor(100*(1-(this.component.data.need_fetching_lsoas.length/this.component.data.lsoas.length)));
-                            if (nextPercentage !== 100) {
-                                this.component.data.percentage = nextPercentage;
+                            this.component.data.percentage = 99;
+                        }
+                        //this.component.forceUpdate(); //setState({percentage: 0});
+                        console.log('Fetching the first '+config.parallel_loads+' lsoas that aren\'t in pending_lsoas and adding these to pending_lsoas');
+                        for (var i=0; i<config.parallel_loads; i++) {
+                            var lsoa = this.component.data.need_fetching_lsoas.shift()
+                            if (!lsoa) {
+                                console.log('No such lsoa', this.component.data.need_fetching_lsoas);
                             } else {
-                                this.component.data.percentage = 99;
-                            }
-                            //this.component.forceUpdate(); //setState({percentage: 0});
-                            console.log('Fetching the first '+config.parallel_loads+' lsoas that aren\'t in pending_lsoas and adding these to pending_lsoas');
-                            for (var i=0; i<config.parallel_loads; i++) {
-                                var lsoa = this.component.data.need_fetching_lsoas.shift()
-                                if (!lsoa) {
-                                    console.log('No such lsoa', this.component.data.need_fetching_lsoas);
-                                } else {
-                                    this.component.data.pending_lsoas.push(lsoa);
-                                    this.component.data.pending_lsoas_date[lsoa] = new Date();
-                                    console.log('Requesting geometry for '+lsoa);
+                                this.component.data.pending_lsoas.push(lsoa);
+                                this.component.data.pending_lsoas_date[lsoa] = new Date();
+                                console.log('Requesting geometry for '+lsoa);
 
-                                    var make_success = function () {
-                                        return function(geometry) {
-                                            console.log('Got geometry for ' +this.lsoa);
-                                            var lsoa = this.lsoa;
-                                            console.log('Adding the layer '+lsoa+' to the layer store and removing it from pending_lsoas')
-                                            var index = this.component.data.pending_lsoas.indexOf(lsoa);
-                                            if (index !== -1) {
-                                                // The lsoa is still in the pending list as we expect
-                                                if (this.component.data.pending_lsoas_date[lsoa]) {
-                                                    delete this.component.data.pending_lsoas_date[lsoa]
-                                                } else {
-                                                    console.error('The pending lsoa date was missing, carrying on anyway')
-                                                }
-                                                if (this.component.data.lsoa_layers[lsoa]) {
-                                                    console.error('The layer is now present, even though it has been fetched in this promise and was listed as pending, not setting it again');
-                                                } else {
-                                                    console.log('Setting the layer '+ lsoa);
-                                                    // console.log(L, lsoa, geometry, this.component.data.lsoa_layers);
-                                                    this.component.data.lsoa_layers[lsoa] = this.component.create_layer(lsoa, geometry);
-                                                    console.log('Set the layer '+ lsoa);
-                                                }
-                                                this.component.data.pending_lsoas.splice(index, 1);
+                                var make_success = function () {
+                                    return function(geometry) {
+                                        console.log('Got geometry for ' +this.lsoa);
+                                        var lsoa = this.lsoa;
+                                        console.log('Adding the layer '+lsoa+' to the layer store and removing it from pending_lsoas')
+                                        var index = this.component.data.pending_lsoas.indexOf(lsoa);
+                                        if (index !== -1) {
+                                            // The lsoa is still in the pending list as we expect
+                                            if (this.component.data.pending_lsoas_date[lsoa]) {
+                                                delete this.component.data.pending_lsoas_date[lsoa]
                                             } else {
-                                                // Another call has already fulfilled the lsoa
-                                                if (this.component.data.pending_lsoas_date[lsoa]) {
-                                                    console.error('The pending lsoa date was not missing, even though the request was fulfilled by another promise, carrying on anyway')
-                                                    delete this.component.data.pending_lsoas_date[lsoa];
-                                                }
-                                                if (!this.component.data.lsoa_layers[lsoa]) {
-                                                    console.error('The lsoa_layer is missing even though the request was fulfilled by another promise, we will set it anyway')
-                                                    this.component.data.lsoa_layers[lsoa] = this.component.create_layer(lsoa, geometry);
-                                                }
+                                                console.error('The pending lsoa date was missing, carrying on anyway')
                                             }
-                                            // At this point, we may not even need the LSOA any more:
-                                            console.log('Need to display a total of '+this.component.data.lsoas.length+' lsoas');
-                                            for (var i=0; i<this.component.data.lsoas.length; i++) {
-                                                if (lsoa == this.component.data.lsoas[i]) {
-                                                    console.log('The lsoa ' + lsoa + ' is still one we need to display');
-                                                    console.log('Setting the colors for ' + lsoa);
-                                                    this.component.set_colors(
-                                                        this.component.data.lsoa_layers[lsoa],
-                                                        this.component.data.summary,
-                                                        // Use the latest props for the colors, not the ones at the time of the request.
-                                                        budget,
-                                                        config.colors,
-                                                        config.max,
-                                                        modifiers,
-                                                        weight
-                                                    );
-                                                    console.log('Adding ' + lsoa + ' to the map');
-                                                    this.component.data.map.addLayer(this.component.data.lsoa_layers[lsoa]);
-                                                    console.log(this.original_bbox, this.component.data.bbox);
-                                                    if (this.original_bbox !== this.component.data.bbox) {
-                                                        console.log('The bounding box has changed, not doing any further processing as the result of this promise completing.');
+                                            if (this.component.data.lsoa_layers[lsoa]) {
+                                                console.error('The layer is now present, even though it has been fetched in this promise and was listed as pending, not setting it again');
+                                            } else {
+                                                console.log('Setting the layer '+ lsoa);
+                                                // console.log(L, lsoa, geometry, this.component.data.lsoa_layers);
+                                                this.component.data.lsoa_layers[lsoa] = this.component.create_layer(lsoa, geometry);
+                                                console.log('Set the layer '+ lsoa);
+                                            }
+                                            this.component.data.pending_lsoas.splice(index, 1);
+                                        } else {
+                                            // Another call has already fulfilled the lsoa
+                                            if (this.component.data.pending_lsoas_date[lsoa]) {
+                                                console.error('The pending lsoa date was not missing, even though the request was fulfilled by another promise, carrying on anyway')
+                                                delete this.component.data.pending_lsoas_date[lsoa];
+                                            }
+                                            if (!this.component.data.lsoa_layers[lsoa]) {
+                                                console.error('The lsoa_layer is missing even though the request was fulfilled by another promise, we will set it anyway')
+                                                this.component.data.lsoa_layers[lsoa] = this.component.create_layer(lsoa, geometry);
+                                            }
+                                        }
+                                        // At this point, we may not even need the LSOA any more:
+                                        console.log('Need to display a total of '+this.component.data.lsoas.length+' lsoas');
+                                        for (var i=0; i<this.component.data.lsoas.length; i++) {
+                                            if (lsoa == this.component.data.lsoas[i]) {
+                                                console.log('The lsoa ' + lsoa + ' is still one we need to display');
+                                                console.log('Setting the colors for ' + lsoa);
+                                                this.component.set_colors(
+                                                    this.component.data.lsoa_layers[lsoa],
+                                                    this.component.data.summary,
+                                                    // Use the latest props for the colors, not the ones at the time of the request.
+                                                    budget,
+                                                    config.colors,
+                                                    config.max,
+                                                    modifiers,
+                                                    weight
+                                                );
+                                                console.log('Adding ' + lsoa + ' to the map');
+                                                this.component.data.map.addLayer(this.component.data.lsoa_layers[lsoa]);
+                                                console.log(this.original_bbox, this.component.data.bbox);
+                                                if (this.original_bbox !== this.component.data.bbox) {
+                                                    console.log('The bounding box has changed, not doing any further processing as the result of this promise completing.');
+                                                } else {
+                                                    console.log('The bounding box has not changed, so we can increment the completed counter');
+                                                    this.component.data.completed += 1;
+                                                    if (this.component.data.need_fetching_lsoas.length === 0) {
+                                                        console.log('Fetching data complete, setting the percentage to 100, nothing else to do.');
+                                                        this.component.data.percentage = 100;
+                                                        this.component.data.percentage_counter += 1;
+                                                        var onTimeout = function() {
+                                                            console.log(this.counter, this.component.data.percentage, this.component.data.percentage_counter);
+                                                            if (this.component.data.percentage_counter == this.counter) {
+                                                                console.log('Setting percentage to -1');
+                                                                this.component.data.percentage = -1;
+                                                                this.component.forceUpdate();
+                                                            }
+                                                        }.bind({
+                                                            component: this.component,
+                                                            counter: this.component.data.percentage_counter+0
+                                                        })
+                                                        setTimeout(onTimeout, 250)
+                                                        console.log('Set the timeout')
+                                                        this.component.forceUpdate(); //setState({percentage: -1})
+                                                        // this.forceUpdate();
+                                                        // if all are completed:
+                                                        //     call set state to render them, and set the percentage to 100%
+                                                        //     call set state with a timeout of 400 to remove the percentage (the timeout checks that the percentage is still 100%) and that the bbox is still the same.
+
+
+
+                                                        // Stop looping
+                                                        break;
                                                     } else {
-                                                        console.log('The bounding box has not changed, so we can increment the completed counter');
-                                                        this.component.data.completed += 1;
-                                                        if (this.component.data.need_fetching_lsoas.length === 0) {
-                                                            console.log('Fetching data complete, setting the percentage to 100, nothing else to do.');
-                                                            this.component.data.percentage = 100;
-                                                            this.component.data.percentage_counter += 1;
-                                                            var onTimeout = function() {
-                                                                console.log(this.counter, this.component.data.percentage, this.component.data.percentage_counter);
-                                                                if (this.component.data.percentage_counter == this.counter) {
-                                                                    console.log('Setting percentage to -1');
-                                                                    this.component.data.percentage = -1;
+                                                        console.log('Still '+ this.component.data.need_fetching_lsoas.length +' more losas to fetch...')// , this.component.data.completed, this.component.data.lsoas.length);
+                                                        // if (this.components.data.lsoas.length !== 0) {
+                                                             var new_percentage = Math.floor(100*(1-(this.component.data.need_fetching_lsoas.length/this.component.data.lsoas.length)));
+                                                             if (new_percentage !== 100) {
+                                                                 if (new_percentage > this.component.data.percentage + 6) {
+                                                                     this.component.data.percentage = new_percentage;
+                                                                     console.log('The percentage has changed enough to be worth a re-render. Now: '+new_percentage);
+                                                                     this.component.forceUpdate(); //setState({percentage: new_percentage})
+                                                                 } else {
+                                                                     console.log('Not updating the percentage this time');
+                                                                 }
+                                                             } else {
+                                                                 this.component.data.percentage = 99;
+                                                             }
+                                                        // }
+                                                        // At this point we might need to fetch some more
+                                                        var run_next = function() {
+                                                            if (this.component.data.need_fetching_lsoas.length !== 0 && this.component.data.completed > 0 && this.component.data.completed % config.parallel_loads === 0) {
+                                                                console.log('Fetching the first '+config.parallel_loads+' lsoas that aren\'t in pending_lsoas and adding these to pending_lsoas');
+                                                                for (var i=0; i<config.parallel_loads; i++) {
+                                                                    var lsoa = this.component.data.need_fetching_lsoas.shift()
+                                                                    if (!lsoa) {
+                                                                        console.log('No such lsoa', this.component.data.need_fetching_lsoas);
+                                                                    } else {
+                                                                        this.component.data.pending_lsoas.push(lsoa);
+                                                                        this.component.data.pending_lsoas_date[lsoa] = new Date();
+                                                                        console.log('Requesting geometry for '+lsoa);
+                                                                        getGeometry(lsoa).then(
+                                                                            make_success().bind({'component': this.component, 'lsoa': lsoa, original_bbox: this.original_bbox}),
+                                                                            failure
+                                                                        );
+                                                                    }
+                                                                }
+                                                                if (this.component.data.need_fetching_lsoas.length === 0) {// && this.component.data.percentage !== -1) {
+                                                                    this.component.data.percentage = 99;
+                                                                    this.component.data.percentage_counter += 1;
+                                                                    var onTimeout = function() {
+                                                                        console.log(this.counter, this.component.data.percentage, this.component.data.percentage_counter);
+                                                                        if (this.component.data.percentage_counter == this.counter) {
+                                                                            console.log('Setting percentage to -1');
+                                                                            this.component.data.percentage = -1;
+                                                                            this.component.forceUpdate();
+                                                                        }
+                                                                    }.bind({
+                                                                        component: this.component,
+                                                                        counter: this.component.data.percentage_counter+0
+                                                                    })
+                                                                    setTimeout(onTimeout, 1000)
+                                                                    console.log('Set the timeout')
                                                                     this.component.forceUpdate();
                                                                 }
-                                                            }.bind({
-                                                                component: this.component,
-                                                                counter: this.component.data.percentage_counter+0
-                                                            })
-                                                            setTimeout(onTimeout, 250)
-                                                            console.log('Set the timeout')
-                                                            this.component.forceUpdate(); //setState({percentage: -1})
-                                                            // this.forceUpdate();
-                                                            // if all are completed:
-                                                            //     call set state to render them, and set the percentage to 100%
-                                                            //     call set state with a timeout of 400 to remove the percentage (the timeout checks that the percentage is still 100%) and that the bbox is still the same.
-
-
-
-                                                            // Stop looping
-                                                            break;
-                                                        } else {
-                                                            console.log('Still '+ this.component.data.need_fetching_lsoas.length +' more losas to fetch...')// , this.component.data.completed, this.component.data.lsoas.length);
-                                                            // if (this.components.data.lsoas.length !== 0) {
-                                                                 var new_percentage = Math.floor(100*(1-(this.component.data.need_fetching_lsoas.length/this.component.data.lsoas.length)));
-                                                                 if (new_percentage !== 100) {
-                                                                     if (new_percentage > this.component.data.percentage + 6) {
-                                                                         this.component.data.percentage = new_percentage;
-                                                                         console.log('The percentage has changed enough to be worth a re-render. Now: '+new_percentage);
-                                                                         this.component.forceUpdate(); //setState({percentage: new_percentage})
-                                                                     } else {
-                                                                         console.log('Not updating the percentage this time');
-                                                                     }
-                                                                 } else {
-                                                                     this.component.data.percentage = 99;
-                                                                 }
-                                                            // }
-                                                            // At this point we might need to fetch some more
-                                                            var run_next = function() {
-                                                                if (this.component.data.need_fetching_lsoas.length !== 0 && this.component.data.completed > 0 && this.component.data.completed % config.parallel_loads === 0) {
-                                                                    console.log('Fetching the first '+config.parallel_loads+' lsoas that aren\'t in pending_lsoas and adding these to pending_lsoas');
-                                                                    for (var i=0; i<config.parallel_loads; i++) {
-                                                                        var lsoa = this.component.data.need_fetching_lsoas.shift()
-                                                                        if (!lsoa) {
-                                                                            console.log('No such lsoa', this.component.data.need_fetching_lsoas);
-                                                                        } else {
-                                                                            this.component.data.pending_lsoas.push(lsoa);
-                                                                            this.component.data.pending_lsoas_date[lsoa] = new Date();
-                                                                            console.log('Requesting geometry for '+lsoa);
-                                                                            getGeometry(lsoa).then(
-                                                                                make_success().bind({'component': this.component, 'lsoa': lsoa, original_bbox: this.original_bbox}),
-                                                                                failure
-                                                                            );
-                                                                        }
-                                                                    }
-                                                                    if (this.component.data.need_fetching_lsoas.length === 0) {// && this.component.data.percentage !== -1) {
-                                                                        this.component.data.percentage = 99;
-                                                                        this.component.data.percentage_counter += 1;
-                                                                        var onTimeout = function() {
-                                                                            console.log(this.counter, this.component.data.percentage, this.component.data.percentage_counter);
-                                                                            if (this.component.data.percentage_counter == this.counter) {
-                                                                                console.log('Setting percentage to -1');
-                                                                                this.component.data.percentage = -1;
-                                                                                this.component.forceUpdate();
-                                                                            }
-                                                                        }.bind({
-                                                                            component: this.component,
-                                                                            counter: this.component.data.percentage_counter+0
-                                                                        })
-                                                                        setTimeout(onTimeout, 1000)
-                                                                        console.log('Set the timeout')
-                                                                        this.component.forceUpdate();
-                                                                    }
-                                                                } else {
-                                                                    console.log('Not a multiple of '+config.parallel_loads+', so we don\'t trigger the next fetch');
-                                                                }
-                                                            }.bind(this)
-                                                                // if completed is a multiple of 4 and there are more to get:
-                                                                //     * fetch the next 4 lsoas that aren't in pending_lsoas
-                                                                // if all of them are pending -> BUG
-                                                            setTimeout(run_next, 1);
-                                                        }
+                                                            } else {
+                                                                console.log('Not a multiple of '+config.parallel_loads+', so we don\'t trigger the next fetch');
+                                                            }
+                                                        }.bind(this)
+                                                            // if completed is a multiple of 4 and there are more to get:
+                                                            //     * fetch the next 4 lsoas that aren't in pending_lsoas
+                                                            // if all of them are pending -> BUG
+                                                        setTimeout(run_next, 1);
                                                     }
                                                 }
                                             }
                                         }
-                                    };
-                                    var failure = function(err){
-                                        console.error('Failed to fetch the geometry. Please refresh the browser.');
                                     }
-                                    getGeometry(lsoa).then(
-                                        make_success().bind({'component': this.component, 'lsoa': lsoa, original_bbox: this.original_bbox}),
-                                        failure
-                                    );
+                                };
+                                var failure = function(err){
+                                    console.error('Failed to fetch the geometry. Please refresh the browser.');
                                 }
+                                getGeometry(lsoa).then(
+                                    make_success().bind({'component': this.component, 'lsoa': lsoa, original_bbox: this.original_bbox}),
+                                    failure
+                                );
                             }
                         }
-                        if (this.component.data.need_fetching_lsoas.length === 0) {// && this.component.data.percentage !== -1) {
-                            this.component.data.percentage = 100;
-                            this.component.forceUpdate();
-                        }
                     }
-                }.bind({component:this, original_bbox: this.data.bbox}),
-                function(err){
-                    console.error(err);
-                }.bind(this)
-            );
-        }
+                    if (this.component.data.need_fetching_lsoas.length === 0) {// && this.component.data.percentage !== -1) {
+                        this.component.data.percentage = 100;
+                        this.component.forceUpdate();
+                    }
+                }
+            }.bind({component:this, original_bbox: this.data.bbox}),
+            function(err){
+                console.error(err);
+            }.bind(this)
+        );
     },
 });
 
@@ -879,7 +940,7 @@ var Panel = React.createClass({
                         bottom: '26px',
                         right: '40px',
                         padding: '5px',
-                        'font-size': '11px',
+                        fontSize: '11px',
                     }}
                 >
                     Downloading... {this.props.percentage+'%'}
@@ -925,7 +986,7 @@ var Main = React.createClass({
 
     render() {
         var modal = this.renderModal(
-            <DetailPopup
+            <OAPopup
                 backdrop={true}
                 onRequestHide={this.hideModal}
                 params={this.props.params}
@@ -972,89 +1033,111 @@ var Main = React.createClass({
 });
 
 
-var DetailPopup = React.createClass({
-    componentDidMount() {
-            this.hackModal();
-    },
-    componentDidUpdate() {
-            this.hackModal();
+
+var Chart = React.createClass({
+    propTypes: {
+        stats: React.PropTypes.array,
     },
 
-    hackModal() {
-        var modal = d3.select(".modal-body");
-        if ( ! modal || modal.classed("patched") ) {
-            return;
-        }
-        modal.classed("patched", true);
-
-        var stats = [
-            { "name" : "Green Space",
-              "value" : Math.round( this.props.summary[this.props.oa].green_space * 100 ),
-              "colour": '#3fad46',
-              "icon": "logo-green-space.png",
-            },
-            { "name" : "Public Transport",
-              "value" : Math.round( this.props.summary[this.props.oa].transport * 100 ),
-              "colour": '#5bc0de',
-              "icon": "logo-transport.png",
-            },
-            { "name" : "Schools",
-              "value" : Math.round( this.props.summary[this.props.oa].schools * 100 ),
-              "colour": '#f0ad4e',
-              "icon": "logo-schools.png",
-            },
-            { "name" : "Safety",
-              "value" : Math.round( this.props.summary[this.props.oa].safety * 100 ),
-              "colour": '#d9534f',
-              "icon": "logo-crime.png",
-            }
-        ];
-
-        modal.html("");
-        var boxes = modal.selectAll( ".box" ).data(stats)
+    componentDidMount: function() {
+        var el = this.getDOMNode();
+        var chart = d3.select(el);
+        // This is the d3 way of creating a set of classed div elements that didn't exist before
+        var boxes = chart.selectAll( ".theme" ).data(this.props.stats)
             .enter()
             .append("div")
-            .classed("box", true);
+            .classed("theme", true)
+        console.log(boxes)
+        // Now we can change each of the themes in turn
         boxes.append("img")
             .classed("icon", true)
             .attr("src", function(d) {
                 return '/http/'+d['icon'];
              });
         boxes.append("div")
-            .classed("one", true)
+            .classed("name", true)
             .html(function(d) {
                 return d['name']
             });
         boxes.append("div")
-            .classed("two", true)
+            .classed("percentage", true)
             .html(function(d) {
                 return d['value']+"%" }
             );
         boxes.append("div")
-            .classed("three", true)
+            .classed("bar", true)
             .append("div")
-            .classed("inner",true)
-            .style("background-color", function(d) {
-                return d['colour']
-            })
-            .transition()
-            .style("width", function(d) {
-                return (d['value']*2.4)+"px"
-             })
-            .duration(600);
+                .classed("color", true)
+                .style("background-color", function(d) {
+                    return d['colour']
+                })
+                .style("width", function(d) {
+                    return 0+"px"
+                 })
+                .transition()
+                .style("width", function(d) {
+                    return (d['value']*2.4)+"px"
+                 })
+                .duration(600);
         boxes.append("div")
             .classed("clearfix", true);
-
     },
 
+    componentDidUpdate: function() {
+        var el = this.getDOMNode();
+        // Re-compute the scales, and render the data points
+        // nothing to do here
+        // update(el, this.props.stats);
+    },
+
+    componentWillUnmount: function() {
+        var el = this.getDOMNode();
+        // Any clean-up would go here
+        // in this example there is nothing to do
+        // destroy(el);
+    },
+
+    render: function() {
+        return (
+            <div className="chart"></div>
+        );
+    }
+});
+
+
+var OAPopup = React.createClass({
     render: function() {
         // console.log(this.props.summary[this.props.oa])
         if (!this.props.summary || !this.props.summary[this.props.oa]) {
             return null;
         } else {
             return (
-                <Modal {...this.props} bsStyle="primary" title={'OA: '+this.props.query.oa} animation={false} backdrop={true}>
+                <Modal {...this.props} bsStyle="primary" title={'Postcode: BR1, Fare Zone: 1, OA: '+this.props.query.oa} animation={false} backdrop={true}>
                     <div className="modal-body">
+                        <OAPopupTabs 
+                            stats={[
+                                { "name" : "Number of Green Spaces",
+                                  "value" : Math.round( this.props.summary[this.props.oa].green_space * 100 ),
+                                  "colour": '#3fad46',
+                                  "icon": "logo-green-space.png",
+                                },
+                                { "name" : "Public Transport",
+                                  "value" : Math.round( this.props.summary[this.props.oa].transport * 100 ),
+                                  "colour": '#5bc0de',
+                                  "icon": "logo-transport.png",
+                                },
+                                { "name" : "Schools",
+                                  "value" : Math.round( this.props.summary[this.props.oa].schools * 100 ),
+                                  "colour": '#f0ad4e',
+                                  "icon": "logo-schools.png",
+                                },
+                                { "name" : "Safety",
+                                  "value" : Math.round( this.props.summary[this.props.oa].safety * 100 ),
+                                  "colour": '#d9534f',
+                                  "icon": "logo-crime.png",
+                                }
+                            ]}
+                        />
                     </div>
                     <div className="modal-footer">
                         <Button onClick={this.props.onRequestHide}>Close</Button>
@@ -1065,6 +1148,74 @@ var DetailPopup = React.createClass({
     }
 });
 
+
+var OAPopupTabs = React.createClass({
+    getInitialState() {
+        return {
+            key: 1
+        };
+    },
+
+    handleSelect(key) {
+        // alert('selected ' + key);
+        this.setState({key});
+    },
+
+    render() {
+        return (
+            <TabbedArea activeKey={this.state.key} onSelect={this.handleSelect}>
+                <TabPane eventKey={1} tab='Chart'>
+                    <Chart stats={this.props.stats} />
+                </TabPane>
+                <TabPane eventKey={2} tab='Description'>
+                    <p>Many of the residents of these neighbourhoods are employed in the financial, insurance and real estate industries, or are information and communications industry professionals engaged in a range of scientific and technical activities. Residents are more likely than average to be White.</p>
+                    <h2>General_description</h2>
+                    <p>This Group comprises young professionals working in the science, technology, finance and insurance sectors. Additionally, large numbers of students rent rooms in centrally located communal establishments. Most others rent privately owned flats, large numbers of which are found in central locations. There is high representation from pre 2001 EU countries, and also high representation of households from Chinese, Arab and other minority backgrounds.</p>
+
+                </TabPane>
+                <TabPane eventKey={3} tab='Travel to Bank'>
+                    <pre>
+driving_distance_miles: "0.99",
+<br/>walking_time_mins: "14",
+<br/>cycling_distance_miles: "0.98",
+<br/>walking_distance_miles: "0.73",
+<br/>public_transport_time_mins: "14",
+<br/>driving_time_mins: "7",
+<br/>cycling_time_mins: "7",
+                    </pre>
+                </TabPane>
+                <TabPane eventKey={4} tab='Schools'>
+<pre>
+SSchool2Percent: "15",
+<br/>PSchool1Percent: "82",
+<br/>PSchoolName3: "no data",
+<br/>PSchoolName2: "no data",
+<br/>PSchoolName1: "Prior Weston Primary School and Children's Centre",
+<br/>SSchoolName1: "Haggerston School",
+<br/>SSchoolName2: "The City Academy, Hackney",
+<br/>SSchoolName3: "no data",
+<br/>PSchool2Percent: "no data",
+<br/>PSchool3Percent: "no data",
+<br/>SSchool1Percent: "19",
+<br/>SSchool3Percent: "no data"
+</pre>
+                </TabPane>
+            </TabbedArea>
+        );
+    }
+});
+
+
+                // .html(function(d) {
+                //     return '<div id="tsc">Click for cycling distance to bank in miles</div>';
+                // })
+        // document.getElementById('tsc').onclick = function(e) {
+        //     getTimeToBank(this.props.oa).then(
+        //         function(result) {
+        //             alert(result.cycling_distance_miles);
+        //         }
+        //     )
+        // }.bind(this);
 
 var App = React.createClass({
 

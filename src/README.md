@@ -1,12 +1,20 @@
 MyLondon
 ========
 
-Install node and npm if you need to and set up the path:
+Install node and npm if you need to and set up the path.
+
+On linux:
 
 ~~~
 wget http://nodejs.org/dist/v0.10.33/node-v0.10.33-linux-x64.tar.gz
 tar zxfv node-v0.10.33-linux-x64.tar.gz
 export PATH=$PATH:node-v0.10.33-linux-x64/bin/
+~~~
+
+On Mac:
+
+~~~
+brew install node
 ~~~
 
 Build the NPM dependencies and fetch the JS dependencies we need:
@@ -18,6 +26,26 @@ npm install bower
 ./fetch.sh
 npm run build
 ~~~
+
+Then start a server:
+
+~~~
+virtualenv -ppython3 env
+env/bin/pip install -r serve_requirements.txt
+env/bin/pip install -r shape_to_bbox_requirements.txt
+env/bin/python3 old_serve.py serve
+~~~
+
+Now visit the page at http://localhost:8000
+
+Be sure to check the `HOST` variable in `src/index.jsx` matches the host you are deploying to. For the URL above it should read:
+
+~~~
+var HOST = 'localhost:8000'
+~~~
+
+Note the test server above requires non-open source code at the moment. This can be replaced later.
+
 
 To Deploy
 ---------
