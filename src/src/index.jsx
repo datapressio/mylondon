@@ -322,8 +322,40 @@ var getSchoolsFromOA = function(oa) {
 
 var getLSOAs = function(bbox_data, bbox) {
     console.log("Trying the bbox from the data: ", bbox);
+    // get_shapes(cursor, screen_left, screen_bottom, screen_right, screen_top):
     return new Promise(function (resolve, reject) {
-        resolve([]);
+        var screen_left = parseFloat(bbox[0]);
+        var screen_bottom = parseFloat(bbox[1]);
+        var screen_right = parseFloat(bbox[2]);
+        var screen_top = parseFloat(bbox[3]);
+        var lsoas = [];
+        for (var i=0; i<bbox_data.length; i++) {
+            var row = bbox_data[i];
+            if (
+                (
+                       ((screen_left <    row.left)    && (screen_right >  row.left))
+                    || ((screen_left <    row.right)   && (screen_right >  row.right))
+                    || ((screen_left >=   row.left)    && (screen_right <= row.right))
+                ) && (
+                       ((screen_bottom <  row.bottom)  && (screen_top >    row.bottom))
+                    || ((screen_bottom <  row.top)     && (screen_top >    row.top))
+                    || ((screen_bottom >= row.bottom)  && (screen_top <=   row.top))
+                )
+            ) {
+                var found = false;
+                for (var j=0; j<lsoas.length; j++) {
+                    if (row.lsoa === lsoas[j]) {
+                        found = true; 
+                        break;
+                    }
+                }
+                if (!found) {
+                    lsoas.push(row.lsoa);
+                }
+            }
+        }
+        // console.log(bbox, [screen_left, screen_bottom, screen_right, screen_top], lsoas);
+        resolve(lsoas);
     });
 };
 
@@ -401,19 +433,19 @@ var getBbox = function() {
                 reject(res.ok);
             } else {
                 var bbox = [];
-                var lsoas = [];
+                // var lsoas = [];
                 var lines = res.text.split('\n')
                 for (var i=1; i<lines.length; i++) {
                     var parts = lines[i].split(',');
                     var found = false;
-                    for (var j=0; j<lsoas.length; j++) {
-                        if (parts[0] === lsoas[j]) {
-                            found = true; 
-                            break;
-                        }
-                    }
+                    //for (var j=0; j<lsoas.length; j++) {
+                    //    if (parts[0] === lsoas[j]) {
+                    //        found = true; 
+                    //        break;
+                    //    }
+                    //}
                     if (!found) {
-                        lsoas.push(parts[0]);
+                        // lsoas.push(parts[0]);
                         bbox.push({
                             lsoa: parts[0],
                             left: parts[2],
