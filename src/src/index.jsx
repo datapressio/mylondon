@@ -320,26 +320,10 @@ var getSchoolsFromOA = function(oa) {
 };
 
 
-var getLSOAs = function(bbox) {
-    if (config.debug) {
-        console.log("Making AJAX request with this bbox: ", bbox)
-    }
+var getLSOAs = function(bbox_data, bbox) {
+    console.log("Trying the bbox from the data: ", bbox);
     return new Promise(function (resolve, reject) {
-        request.get('http://'+HOST+'/bbox')
-        .query({'bbox': bbox})
-        // .withCredentials()
-        // .set('Authorization', 'Bearer AuthedAuthedAuthedAuthedAuthed')
-        .end(function (err, res) {
-            if (err) {
-                console.error('Error:' + err);
-                reject(err);
-            } else if (!res.ok) {
-                console.error('Not OK');
-                reject(res.ok);
-            } else {
-                resolve(res.text.split('\n'));
-            }
-        });
+        resolve([]);
     });
 };
 
@@ -401,6 +385,50 @@ var getSummary = function() {
         });
     });
 };
+
+var getBbox = function() {
+    if (config.debug) {
+        console.log("Fetching the bbox csv")
+    }
+    return new Promise(function (resolve, reject) {
+        request.get('https://londondatastore-upload.s3.amazonaws.com/dataset/mylondon/bbox.csv')
+        .end(function (err, res) {
+            if (err) {
+                console.error('Error:' + err);
+                reject(err);
+            } else if (!res.ok) {
+                console.error('Not OK');
+                reject(res.ok);
+            } else {
+                var bbox = [];
+                var lsoas = [];
+                var lines = res.text.split('\n')
+                for (var i=1; i<lines.length; i++) {
+                    var parts = lines[i].split(',');
+                    var found = false;
+                    for (var j=0; j<lsoas.length; j++) {
+                        if (parts[0] === lsoas[j]) {
+                            found = true; 
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        lsoas.push(parts[0]);
+                        bbox.push({
+                            lsoa: parts[0],
+                            left: parts[2],
+                            bottom: parts[3],
+                            right: parts[4],
+                            top: parts[5]
+                        });
+                    }
+                }
+                resolve(bbox)
+            }
+        });
+    });
+};
+
 
 var getPostcodeData = function(postcode) {
     if (config.debug) {
@@ -528,6 +556,7 @@ var MapData = React.createClass({
         //console.log('componentDidMount')
         this.data = {
             summary: null,
+            bbox_data: null,
             budget: null,
             boundary_scores: [],
             priority: null,
@@ -727,15 +756,17 @@ var MapData = React.createClass({
                 console.log('Fetching summary data', objectSize(this.data.summary), this.data.summary_pending);
             }
             this.data.summary_pending = true;
-            getSummary().then(
-                function (data) {
-                    this.component.data.lsoa_to_oa = data.lsoa_to_oa;
-                    this.component.data.oa_to_lsoa = data.oa_to_lsoa;
-                    this.component.data.summary = data.summary;
+            resolveHash([getBbox(), getSummary()]).then(
+                function (result) {
+                    this.component.data.bbox_data = result[0];
+                    this.component.data.lsoa_to_oa = result[1].lsoa_to_oa;
+                    this.component.data.oa_to_lsoa = result[1].oa_to_lsoa;
+                    this.component.data.summary = result[1].summary;
                     this.component.data.summary_pending = false;
                     if (config.debug) {
                         console.log('Got summary data, getting data', this.component)
                     }
+                    console.log(this.component.data.bbox_data);
                     this.component.getData(this.component.props); // Whatever is set now (for some reason props doesn't work?)
                     if (config.debug) {
                         console.log('Called getData', this.component.props.query.bbox)
@@ -851,7 +882,7 @@ var MapData = React.createClass({
         if (config.debug) {
             console.log('Setting store bbox data for ', this.data.bbox);
         }
-        getLSOAs(bbox).then(
+        getLSOAs(this.data.bbox_data, bbox).then(
             function (lsoas) {
                 if (this.original_bbox !== this.component.data.bbox) {
                     if (config.debug) {
