@@ -2,9 +2,14 @@ var max = 1; //2500;
 var raw_data = {
     max: max,
     parallel_loads: 4,
-    modifier_ratings: [1.5, 1, 0.75, 0.5],
+    modifier_ratings: [
+        [100],
+        [66, 34],
+        [45, 33, 22],
+        [40, 30, 20, 10],
+    ],
     throttle: 250,
-    debug: true,
+    debug: false,
     colors: [
         // '#f7fcf5',
         '#e5f5e0',
@@ -31,8 +36,8 @@ var raw_data = {
         }, 
         3: {
             id: 3,
-            text: 'Crime/Safety',
-            name: 'crime',
+            text: 'Safety',
+            name: 'safety',
             icon: '/http/logo-crime.png',
         }, 
         4: {

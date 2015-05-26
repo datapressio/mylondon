@@ -30,7 +30,7 @@ var d3 = require('d3');
 // require('../node_modules/leaflet/dist/leaflet.css');
 // require('../node_modules/leaflet-minimap/dist/Control.MiniMap.min.css');
 require('../node_modules/react-bootstrap-slider/node_modules/bootstrap/dist/css/bootstrap.css');
-
+var resolveHash = require('when/keys').all;
 
 function objectSize(obj) {
     var size = 0, key;
@@ -76,17 +76,43 @@ var Priorities = require('./components/drag/Priorities');
 var BudgetSlider = require('./components/budgetslider/BudgetSlider');
 
 require('./index.css')
-var config = require('./data.jsx')
+var config = require('./config.jsx')
 
 var request = require('superagent');
 
 var HOST = 'localhost:8000'
 //var HOST = '192.168.0.4:8000'
 //var HOST = '10.14.3.68:8000'
-//var HOST = 's26.datapress.io'
+// var HOST = 's26.datapress.io'
 
 
-var getTimeToBank = function(oa) {
+var calculate_bucket = function(boundary_scores, value) {
+    // Assume best color
+    var bucket = 7;
+    // Now swap it for a lower value if we can
+    for (var i=0; i<boundary_scores.length; i++) {
+        if (value <= boundary_scores[i]) {
+            bucket = i;
+            break;
+        }
+    }
+    return bucket;
+};
+
+var display_score = function(boundary_scores, value) {
+    var bucket = calculate_bucket(boundary_scores, value);
+    if (bucket <= 2) {
+        return 'Below Average';
+    } else if (bucket <= 4) {
+        return 'Average';
+    } else if (bucket <= 6) {
+        return 'Above Average';
+    } else {
+        return 'Excellent';
+    }
+}
+
+var getTimeToBankFromOA = function(oa) {
     return new Promise(function (resolve, reject) {
         request.get('http://api.datapress.io/api/3/action/datastore_search')
         .query({
@@ -103,19 +129,195 @@ var getTimeToBank = function(oa) {
                 console.error('Not OK');
                 reject(res.ok);
             } else {
-                console.log(res.body)
+                if (config.debug) {
+                    console.log(res.body)
+                }
                 if (!res.body.success) {
                     console.error('Failure reported in JSON');
                     reject(res.body);
                 } else {
-                    window.result = res.body.result.records[0]
                     resolve(res.body.result.records[0]);
                 }
             }
         });
     });
 };
-// window.getTimeToBank = getTimeToBank;
+
+var getPostcodeFromOA = function(oa) {
+    return new Promise(function (resolve, reject) {
+        request.get('http://api.datapress.io/api/3/action/datastore_search')
+        .query({
+            resource_id: 'MyLondon_postcode_OA',
+            filters: JSON.stringify({OA11CD: oa})
+        })
+        .end(function (err, res) {
+            if (err) {
+                console.error('Error:' + err);
+                reject(err);
+            } else if (!res.ok) {
+                console.error('Not OK');
+                reject(res.ok);
+            } else {
+                if (config.debug) {
+                    console.log(res.body)
+                }
+                if (!res.body.success) {
+                    console.error('Failure reported in JSON');
+                    reject(res.body);
+                } else {
+                    resolve(res.body.result.records[0].PC_DIST);
+                }
+            }
+        });
+    });
+};
+
+
+var getAreaDescriptionFromOA = function(oa) {
+    return new Promise(function (resolve, reject) {
+        request.get('http://api.datapress.io/api/3/action/datastore_search')
+        .query({
+            resource_id: 'MyLondon_LOAC_area_description_text_v3',
+            filters: JSON.stringify({OA11CD: oa})
+        })
+        .end(function (err, res) {
+            if (err) {
+                console.error('Error:' + err);
+                reject(err);
+            } else if (!res.ok) {
+                console.error('Not OK');
+                reject(res.ok);
+            } else {
+                if (config.debug) {
+                    console.log(res.body)
+                }
+                if (!res.body.success) {
+                    console.error('Failure reported in JSON');
+                    reject(res.body);
+                } else {
+                    resolve(res.body.result.records[0]);
+                }
+            }
+        });
+    });
+};
+
+var getGeospatialFromOA = function(oa) {
+    return new Promise(function (resolve, reject) {
+        request.get('http://api.datapress.io/api/3/action/datastore_search')
+        .query({
+            resource_id: 'bbox',
+            filters: JSON.stringify({oa: oa})
+        })
+        .end(function (err, res) {
+            if (err) {
+                console.error('Error:' + err);
+                reject(err);
+            } else if (!res.ok) {
+                console.error('Not OK');
+                reject(res.ok);
+            } else {
+                if (config.debug) {
+                    console.log(res.body)
+                }
+                if (!res.body.success) {
+                    console.error('Failure reported in JSON');
+                    reject(res.body);
+                } else {
+                    resolve(res.body.result.records[0]);
+                }
+            }
+        });
+    });
+};
+
+
+var getRentFromOA = function(oa) {
+    return new Promise(function (resolve, reject) {
+        request.get('http://api.datapress.io/api/3/action/datastore_search')
+        .query({
+            resource_id: 'modelled_OA_rents',
+            filters: JSON.stringify({OA11CD: oa})
+        })
+        .end(function (err, res) {
+            if (err) {
+                console.error('Error:' + err);
+                reject(err);
+            } else if (!res.ok) {
+                console.error('Not OK');
+                reject(res.ok);
+            } else {
+                if (config.debug) {
+                    console.log(res.body)
+                }
+                if (!res.body.success) {
+                    console.error('Failure reported in JSON');
+                    reject(res.body);
+                } else {
+                    resolve(res.body.result.records[0]);
+                }
+            }
+        });
+    });
+};
+
+var getFareZoneFromOA = function(oa) {
+    return new Promise(function (resolve, reject) {
+        request.get('http://api.datapress.io/api/3/action/datastore_search')
+        .query({
+            resource_id: 'MyLondon_fare_zone_OA',
+            filters: JSON.stringify({OA11CD: oa})
+        })
+        .end(function (err, res) {
+            if (err) {
+                console.error('Error:' + err);
+                reject(err);
+            } else if (!res.ok) {
+                console.error('Not OK');
+                reject(res.ok);
+            } else {
+                if (config.debug) {
+                    console.log(res.body)
+                }
+                if (!res.body.success) {
+                    console.error('Failure reported in JSON');
+                    reject(res.body);
+                } else {
+                    resolve(res.body.result.records[0].Fare_Zone);
+                }
+            }
+        });
+    });
+};
+
+var getSchoolsFromOA = function(oa) {
+    return new Promise(function (resolve, reject) {
+        request.get('http://api.datapress.io/api/3/action/datastore_search')
+        .query({
+            resource_id: 'MyLondonSchoolsCatchmentv2',
+            filters: JSON.stringify({OA11CD: oa})
+        })
+        .end(function (err, res) {
+            if (err) {
+                console.error('Error:' + err);
+                reject(err);
+            } else if (!res.ok) {
+                console.error('Not OK');
+                reject(res.ok);
+            } else {
+                if (config.debug) {
+                    console.log(res.body)
+                }
+                if (!res.body.success) {
+                    console.error('Failure reported in JSON');
+                    reject(res.body);
+                } else {
+                    resolve(res.body.result.records[0]);
+                }
+            }
+        });
+    });
+};
 
 
 var getLSOAs = function(bbox) {
@@ -160,7 +362,7 @@ var getSummary = function() {
         console.log("Fetching the summary csv")
     }
     return new Promise(function (resolve, reject) {
-        request.get('http://'+HOST+'/http/summary.csv')
+        request.get('https://londondatastore-upload.s3.amazonaws.com/dataset/mylondon/summary.csv')
         .end(function (err, res) {
             if (err) {
                 console.error('Error:' + err);
@@ -173,8 +375,8 @@ var getSummary = function() {
                 var lsoa_to_oa = {}
                 var oa_to_lsoa = {}
                 var oa_lines = res.text.split('\n')
-                for (var i=0; i<oa_lines.length-1; i++) {
-                    var parts = oa_lines[i].split('|');
+                for (var i=1; i<oa_lines.length; i++) {
+                    var parts = oa_lines[i].split(',');
                     if (lsoa_to_oa[parts[1]]) {
                         lsoa_to_oa[parts[1]].push(parts[0]);
                     } else {
@@ -182,28 +384,14 @@ var getSummary = function() {
                     }
                     oa_to_lsoa[parts[0]] = parts[1];
                     summary[parts[0]] = {
-                        rent: parts[3]/4.0, // Per week
-                        green_space: parts[4]/84.3,
-                        transport: rating_values[parts[5]],
-                        safety: 1-(parts[6]/6233),
-                        crime: (parts[6]/6233),
-                        schools: parts[7]/94.0,
+                        rent: parseFloat(parts[3])/(52/12), // Per week
+                        green_space: parseFloat(parts[4]),
+                        transport: parseFloat(parts[5]),
+                        safety: parseFloat(parts[6]),
+                        //crime: 1-parseFloat(parts[6]),
+                        schools: parseFloat(parts[7]),
                     };
-                    if (config.debug && i==1) {
-                        console.log('ttttttttttttttttttttttttttttttttttttt', parts[0], summary[parts[0]]);
-                    }
                 }
-                    //    modelled_rents_oa.OA11CD
-                    //  , oa_to_lsoa.LSOA11CD
-                    //  , oa_to_lsoa.LAD11NM
-                    //  , modelled_rents_oa.Ave_rent_1_bedroom
-                    //  , openspace_oa.London_rank
-                    //  , travel_oa.London_rank
-                    //  , crime_oa.Crimes
-                    //  , 0.5
-                    //  e.g.
-                    //  crime: "19"green_space: "average"rent: "2193"schools: "0.5"transport: "top 20 percent"
-
                 resolve({
                     summary: summary,
                     lsoa_to_oa: lsoa_to_oa,
@@ -228,7 +416,6 @@ var getPostcodeData = function(postcode) {
                 console.error('Not OK');
                 reject(res.ok);
             } else {
-                // console.log(JSON.stringify(res.body));
                 resolve(res.body);
             }
         });
@@ -237,8 +424,9 @@ var getPostcodeData = function(postcode) {
 
 
 var getGeometry = function(lsoa) {
+        //request.get('http://'+HOST+'/lsoa_geojson/'+lsoa+'.json')
     return new Promise(function (resolve, reject) {
-        request.get('http://'+HOST+'/lsoa_geojson/'+lsoa+'.json')
+        request.get('http://geojson.datapress.io.s3.amazonaws.com/data/'+lsoa+'.json')
         .query({})
         // .withCredentials()
         // .set('Authorization', 'Bearer AuthedAuthedAuthedAuthedAuthed')
@@ -289,7 +477,9 @@ var MapData = React.createClass({
     },
 
     set_map(map) {
-        console.log('Set map ...', map);
+        if (config.debug) {
+            console.log('Set map ...', map);
+        }
         this.data.map = map;
         this.getData(this.props);
         //this.forceUpdate();
@@ -306,7 +496,6 @@ var MapData = React.createClass({
             params={this.props.params}
             query={this.props.query}
             colors={config.colors}
-            max={config.max}
             zoom={this.state.zoom}
             modal={this.state.modal}
             budget={this.state.budget}
@@ -318,6 +507,7 @@ var MapData = React.createClass({
             lsoas={this.state.lsoas}
             geometry={this.data.geometry}
             summary={this.data.summary}
+            boundary_scores={this.data.boundary_scores}
             data_updated={this.state.data_updated}
             onChangePostcode={this.onChangePostcode}
         />
@@ -339,6 +529,7 @@ var MapData = React.createClass({
         this.data = {
             summary: null,
             budget: null,
+            boundary_scores: [],
             priority: null,
             bbox: null,
             map: null,
@@ -373,28 +564,18 @@ var MapData = React.createClass({
         }
     },
 
-    calculate_rank: function(colors, data, max, crime_modifier, transport_modifier, green_space_modifier, schools_modifier) {
-        var max_score = max*(crime_modifier+transport_modifier+green_space_modifier+schools_modifier);
+    calculate_score: function(oa_data, modifiers) {
+        var max_score = (modifiers.safety + modifiers.transport+modifiers.green_space + modifiers.schools);
         var total = (
-            (data.safety)*crime_modifier
+            (oa_data.safety)*modifiers.safety
         ) + (
-            (data.transport)*transport_modifier
+            (oa_data.transport)*modifiers.transport
         ) + (
-            (data.green_space)*green_space_modifier
+            (oa_data.green_space)*modifiers.green_space
         ) + (
-            (data.schools)*schools_modifier
+            (oa_data.schools)*modifiers.schools
         )
-        var rank = {
-            value: total / max_score,
-            color: '#000000',
-        }
-        for (var i=0; i<colors.length; i++) {
-            if (rank.value <= (i+1)/colors.length) {
-                rank.color = colors[i];
-                break;
-            }
-        }
-        return rank;
+        return total/max_score;
     },
 
     create_layer: function(lsoa, geometry) {
@@ -408,7 +589,9 @@ var MapData = React.createClass({
                 layer._layers[sub_layer].on(
                     'click',
                     function(event) {
-                        console.log('Clicked OA: ', this.oa);
+                        if (config.debug) {
+                            console.log('Clicked OA: ', this.oa);
+                        }
                         // if (config.debug) {
                         //     console.log(event.layer.feature.properties);
                         // }
@@ -423,7 +606,9 @@ var MapData = React.createClass({
                             }
                         );
                         this.component.context.router.transitionTo('map', this.component.props.params, query);
-                        console.log('done');
+                        if (config.debug) {
+                            console.log('done');
+                        }
                     }.bind(
                         {
                             component: this,
@@ -445,9 +630,9 @@ var MapData = React.createClass({
         return layer;
     },
 
-    set_colors: function(layer, summary, budget, colors, max, modifiers, weight) {
-        // console.log('Layer OAs ', layer.oas);
-        // console.log('Layer '+layer.lsoa+' has oas:', layer.oas)
+    set_colors: function(layer, boundary_scores, summary, budget, colors, modifiers, weight) {
+        // Need to calculate the value for every OA, so that we can assign a rank number to each
+        // console.error(boundary_scores);
         for (var oa in layer.oas) {
             if (layer.oas.hasOwnProperty(oa)) {
                 // console.log('Inspecting ', oa, summary, budget);
@@ -466,29 +651,28 @@ var MapData = React.createClass({
                         });
                     } else {
                         // console.log('Calculating rank for '+oa, this.calculate_rank);
-                        var rank = this.calculate_rank(
-                            colors,
+
+                        var value = this.calculate_score(
                             data,
-                            max,
-                            modifiers.crime,
-                            modifiers.transport,
-                            modifiers.green_space,
-                            modifiers.schools
+                            modifiers
                         );
-                        // console.log('Got rank for lsoa '+layer.lsoa+', oa: '+oa); //rank);
+
+                        var bucket = calculate_bucket(boundary_scores, value);
+                        // console.error(value, bucket, colors[bucket]);
                         layer.oas[oa].setStyle({
-                            color: rank.color,
+                            color: colors[bucket],
                             stroke: true,
                             weight: weight,
-                            fillOpacity: (0.1 + rank.value/1.3),
-                            //fillOpacity: (0.3 + rank.value/1.3),
-                            //opacity: (0.1 + rank.value/1.3)/4,
+                            fillOpacity: (0.5 + (bucket/7)/3),
+                            //fillOpacity: (0.3 + (bucket/7)/1.3),
+                            //opacity: (0.1 + (bucket/7)/1.3)/4,
                         });
                     }
                 }
             }
         }
     },
+
 
     getData(props) {
         // Parse URL information
@@ -519,7 +703,9 @@ var MapData = React.createClass({
             var id = parseInt(priority_order[i]);
             var theme = config.cards[id];
             theme.disabled = false;
-            modifiers[theme.name] = config.modifier_ratings[next];
+            if (disabled_themes.length < 4) {
+                modifiers[theme.name] = config.modifier_ratings[(4-disabled_themes.length)-1][next]/100.0;
+            }
             for (var j=0; j<disabled_themes.length; j++) {
                 if (id === disabled_themes[j]) {
                     // console.log('yyyyyyyyyyyyyyyyyyyyyyy disabling ', id);
@@ -533,6 +719,7 @@ var MapData = React.createClass({
             }
             cards.push(theme);
         }
+        console.info(modifiers);
 
         // Only start fetching the summary data if we haven't got it or started fetching it yet
         if (!objectSize(this.data.summary) && !this.data.summary_pending) {
@@ -581,13 +768,17 @@ var MapData = React.createClass({
 
         // If we don't have all the information we need yet, there is no more to do.
         if (!(bbox && zoom && this.data.map && this.data.summary)) {
-            console.log('Not processing the bbox yet', bbox, this.data.map, this.data.summary, this.data.bbox);
+            if (config.debug) {
+                console.log('Not processing the bbox yet', bbox, this.data.map, this.data.summary, this.data.bbox);
+            }
             return
         }
 
         // If we are so zoomed out there is nothing to render, stop now.
         if (zoom < 13) {
-            console.log('Too zoomed out, removing all layers');
+            if (config.debug) {
+                console.log('Too zoomed out, removing all layers');
+            }
             this.data.map.eachLayer(function (layer) {
                 if (layer.lsoa) {
                     this.data.map.removeLayer(layer);
@@ -604,16 +795,34 @@ var MapData = React.createClass({
         }
 
         // Only re-colour the polygons if something that would cause their colour to change has changed
-        if (this.data.budget !== budget || this.data.priority !== priority_order.join('|') || this.data.disabled_themes !== disabled_themes.join('|')) {
-            console.log('The budget, disabled themes or priority have changed, re-colour the polygons');
+        if (this.data.budget !== budget || this.data.priority !== priority_order.join('|') || this.data.disabled_themes !== disabled_themes.join('|') && this.data.summary) {
+            if (config.debug) {
+                console.log('The budget, disabled themes or priority have changed, re-colour the polygons');
+            }
+            if (this.data.priority !== priority_order.join('|') || this.data.disabled_themes !== disabled_themes.join('|')) {
+                console.log("Need to re-calculate all values to be able to rank them");
+                var all = [];
+                for (var d in this.data.summary) {
+                    if (this.data.summary.hasOwnProperty(d)) {
+                        all.push(this.calculate_score(this.data.summary[d], modifiers));
+                    }
+                }
+                all.sort();
+                var boundary_number = all.length / 8;
+                this.data.boundary_scores = [];
+                for (var i=1; i<8; i++) {
+                    this.data.boundary_scores.push(all[parseInt(i*boundary_number)])
+                }
+                console.info(this.data.boundary_scores);
+            }
             for (var i=0; i<this.data.lsoas.length; i++) {
                 this.set_colors(
                     this.data.lsoa_layers[this.data.lsoas[i]],
+                    this.data.boundary_scores,
                     this.data.summary,
                     // Use the latest budget and props, not the ones at the time of the request
                     budget,
                     config.colors,
-                    config.max,
                     modifiers,
                     weight
                 );
@@ -625,9 +834,13 @@ var MapData = React.createClass({
 
 
         // If nothing that would affect which polygons are displayed has changed, stop now
-        console.log(this.data.bbox, bbox.join('|')+'|'+zoom);
+        if (config.debug) {
+            console.log(this.data.bbox, bbox.join('|')+'|'+zoom);
+        }
         if (this.data.bbox === bbox.join('|')+'|'+zoom) {
-            console.log('No bounding box or zoom change, no changes to make to which polygons are displayed');
+            if (config.debug) {
+                console.log('No bounding box or zoom change, no changes to make to which polygons are displayed');
+            }
             return;
         }
 
@@ -635,18 +848,26 @@ var MapData = React.createClass({
         // (since LSOAs are larger than OAs, we are fetching more polygons than we actually need, but this means they
         //  are ready when the user starts to pan around the map)
         this.data.bbox = bbox.join('|')+'|'+zoom;
-        console.log('Setting store bbox data for ', this.data.bbox);
+        if (config.debug) {
+            console.log('Setting store bbox data for ', this.data.bbox);
+        }
         getLSOAs(bbox).then(
             function (lsoas) {
                 if (this.original_bbox !== this.component.data.bbox) {
-                    console.log('bbox doesn\'t match, ignoring the lsoa list just received');
+                    if (config.debug) {
+                        console.log('bbox doesn\'t match, ignoring the lsoa list just received');
+                    }
                 } else {
-                    console.log('The bbox has not changed since the lsoa list was requested, we can start processing lsoas');
-                    console.log('Setting store completed to 0');
+                    if (config.debug) {
+                        console.log('The bbox has not changed since the lsoa list was requested, we can start processing lsoas');
+                        console.log('Setting store completed to 0');
+                        console.log('Setting the lsoas we need', lsoas);
+                    }
                     this.component.data.completed = 0;
-                    console.log('Setting the lsoas we need', lsoas);
                     this.component.data.lsoas = lsoas;
-                    console.log('Adding any layers we already have that we now need');
+                    if (config.debug) {
+                        console.log('Adding any layers we already have that we now need');
+                    }
                     var counter = 0;
                     var missing_lsoa_layers = [];
                     var not_pending = [];
@@ -654,18 +875,22 @@ var MapData = React.createClass({
                         var lsoa = lsoas[i]
                         // console.log('Inspecting ' + lsoa);
                         if (this.component.data.lsoa_layers[lsoa]) {
-                            console.log('Setting the colors for ' + lsoa);
+                            if (config.debug) {
+                                console.log('Setting the colors for ' + lsoa);
+                            }
                             this.component.set_colors(
                                 this.component.data.lsoa_layers[lsoa],
+                                this.component.data.boundary_scores,
                                 this.component.data.summary,
                                 // Use the latest budget and props, not the ones at the time of the request
                                 budget,
                                 config.colors,
-                                config.max,
                                 modifiers,
                                 weight
                             );
-                            console.log('Adding ' + lsoa + ' to the map');
+                            if (config.debug) {
+                                console.log('Adding ' + lsoa + ' to the map');
+                            }
                             this.component.data.map.addLayer(this.component.data.lsoa_layers[lsoa]);
                             counter += 1;
                         } else {
@@ -675,8 +900,10 @@ var MapData = React.createClass({
                             }
                         }
                     }
-                    console.log('Put ' + counter + ' layers on the map');
-                    console.log('Removing the layers from the map that we no longer need');
+                    if (config.debug) {
+                        console.log('Put ' + counter + ' layers on the map');
+                        console.log('Removing the layers from the map that we no longer need');
+                    }
                     // Remove layers we no longer need
                     counter = 0;
                     this.component.data.map.eachLayer(function (layer) {
@@ -685,17 +912,21 @@ var MapData = React.createClass({
                             this.counter += 1;
                         }
                     }.bind({component: this.component, lsoas: lsoas, counter: counter}));
-                    console.log('Removed '+counter+' layers from the map');
-                    console.log('Missing ' + missing_lsoa_layers.length + ' layers');
-                    console.log(missing_lsoa_layers.length - not_pending.length + ' layers are already pending');
-                    console.log('Need to fetch ' + not_pending.length + ' layers');
+                    if (config.debug) {
+                        console.log('Removed '+counter+' layers from the map');
+                        console.log('Missing ' + missing_lsoa_layers.length + ' layers');
+                        console.log(missing_lsoa_layers.length - not_pending.length + ' layers are already pending');
+                        console.log('Need to fetch ' + not_pending.length + ' layers');
+                    }
                     //if (not_pending.length == 0 && this.component.data.percentage == 100 ) {
                     //    // Handle zooming
                     //    this.forceUpdate();
                     //}
                     this.component.data.need_fetching_lsoas = not_pending;
                     if (this.component.data.need_fetching_lsoas == 0) {
-                        console.log('Nothing to fetch');
+                        if (config.debug) {
+                            console.log('Nothing to fetch');
+                        }
                         this.component.data.percentage = -1;
                         this.forceUpdate();
                     } else {
@@ -706,21 +937,30 @@ var MapData = React.createClass({
                             this.component.data.percentage = 99;
                         }
                         //this.component.forceUpdate(); //setState({percentage: 0});
-                        console.log('Fetching the first '+config.parallel_loads+' lsoas that aren\'t in pending_lsoas and adding these to pending_lsoas');
+                        if (config.debug) {
+                            console.log('Fetching the first '+config.parallel_loads+' lsoas that aren\'t in pending_lsoas and adding these to pending_lsoas');
+                        }
                         for (var i=0; i<config.parallel_loads; i++) {
                             var lsoa = this.component.data.need_fetching_lsoas.shift()
                             if (!lsoa) {
-                                console.log('No such lsoa', this.component.data.need_fetching_lsoas);
+                                if (config.debug) {
+                                    console.log('No such lsoa', this.component.data.need_fetching_lsoas);
+                                }
                             } else {
                                 this.component.data.pending_lsoas.push(lsoa);
                                 this.component.data.pending_lsoas_date[lsoa] = new Date();
-                                console.log('Requesting geometry for '+lsoa);
-
+                                if (config.debug) {
+                                    console.log('Requesting geometry for '+lsoa);
+                                }
                                 var make_success = function () {
                                     return function(geometry) {
-                                        console.log('Got geometry for ' +this.lsoa);
+                                        if (config.debug) {
+                                            console.log('Got geometry for ' +this.lsoa);
+                                        }
                                         var lsoa = this.lsoa;
-                                        console.log('Adding the layer '+lsoa+' to the layer store and removing it from pending_lsoas')
+                                        if (config.debug) {
+                                            console.log('Adding the layer '+lsoa+' to the layer store and removing it from pending_lsoas')
+                                        }
                                         var index = this.component.data.pending_lsoas.indexOf(lsoa);
                                         if (index !== -1) {
                                             // The lsoa is still in the pending list as we expect
@@ -732,10 +972,14 @@ var MapData = React.createClass({
                                             if (this.component.data.lsoa_layers[lsoa]) {
                                                 console.error('The layer is now present, even though it has been fetched in this promise and was listed as pending, not setting it again');
                                             } else {
-                                                console.log('Setting the layer '+ lsoa);
+                                                if (config.debug) {
+                                                    console.log('Setting the layer '+ lsoa);
+                                                }
                                                 // console.log(L, lsoa, geometry, this.component.data.lsoa_layers);
                                                 this.component.data.lsoa_layers[lsoa] = this.component.create_layer(lsoa, geometry);
-                                                console.log('Set the layer '+ lsoa);
+                                                if (config.debug) {
+                                                    console.log('Set the layer '+ lsoa);
+                                                }
                                             }
                                             this.component.data.pending_lsoas.splice(index, 1);
                                         } else {
@@ -750,37 +994,55 @@ var MapData = React.createClass({
                                             }
                                         }
                                         // At this point, we may not even need the LSOA any more:
-                                        console.log('Need to display a total of '+this.component.data.lsoas.length+' lsoas');
+                                        if (config.debug) {
+                                            console.log('Need to display a total of '+this.component.data.lsoas.length+' lsoas');
+                                        }
                                         for (var i=0; i<this.component.data.lsoas.length; i++) {
                                             if (lsoa == this.component.data.lsoas[i]) {
-                                                console.log('The lsoa ' + lsoa + ' is still one we need to display');
-                                                console.log('Setting the colors for ' + lsoa);
+                                                if (config.debug) {
+                                                    console.log('The lsoa ' + lsoa + ' is still one we need to display');
+                                                    console.log('Setting the colors for ' + lsoa);
+                                                }
                                                 this.component.set_colors(
                                                     this.component.data.lsoa_layers[lsoa],
+                                                    this.component.data.boundary_scores,
                                                     this.component.data.summary,
                                                     // Use the latest props for the colors, not the ones at the time of the request.
                                                     budget,
                                                     config.colors,
-                                                    config.max,
                                                     modifiers,
                                                     weight
                                                 );
-                                                console.log('Adding ' + lsoa + ' to the map');
+                                                if (config.debug) {
+                                                    console.log('Adding ' + lsoa + ' to the map');
+                                                }
                                                 this.component.data.map.addLayer(this.component.data.lsoa_layers[lsoa]);
-                                                console.log(this.original_bbox, this.component.data.bbox);
+                                                if (config.debug) {
+                                                    console.log(this.original_bbox, this.component.data.bbox);
+                                                }
                                                 if (this.original_bbox !== this.component.data.bbox) {
-                                                    console.log('The bounding box has changed, not doing any further processing as the result of this promise completing.');
+                                                    if (config.debug) {
+                                                        console.log('The bounding box has changed, not doing any further processing as the result of this promise completing.');
+                                                    }
                                                 } else {
-                                                    console.log('The bounding box has not changed, so we can increment the completed counter');
+                                                    if (config.debug) {
+                                                        console.log('The bounding box has not changed, so we can increment the completed counter');
+                                                    }
                                                     this.component.data.completed += 1;
                                                     if (this.component.data.need_fetching_lsoas.length === 0) {
-                                                        console.log('Fetching data complete, setting the percentage to 100, nothing else to do.');
+                                                        if (config.debug) {
+                                                            console.log('Fetching data complete, setting the percentage to 100, nothing else to do.');
+                                                        }
                                                         this.component.data.percentage = 100;
                                                         this.component.data.percentage_counter += 1;
                                                         var onTimeout = function() {
-                                                            console.log(this.counter, this.component.data.percentage, this.component.data.percentage_counter);
+                                                            if (config.debug) {
+                                                                console.log(this.counter, this.component.data.percentage, this.component.data.percentage_counter);
+                                                            }
                                                             if (this.component.data.percentage_counter == this.counter) {
-                                                                console.log('Setting percentage to -1');
+                                                                if (config.debug) {
+                                                                    console.log('Setting percentage to -1');
+                                                                }
                                                                 this.component.data.percentage = -1;
                                                                 this.component.forceUpdate();
                                                             }
@@ -789,7 +1051,9 @@ var MapData = React.createClass({
                                                             counter: this.component.data.percentage_counter+0
                                                         })
                                                         setTimeout(onTimeout, 250)
-                                                        console.log('Set the timeout')
+                                                        if (config.debug) {
+                                                            console.log('Set the timeout')
+                                                        }
                                                         this.component.forceUpdate(); //setState({percentage: -1})
                                                         // this.forceUpdate();
                                                         // if all are completed:
@@ -801,16 +1065,22 @@ var MapData = React.createClass({
                                                         // Stop looping
                                                         break;
                                                     } else {
-                                                        console.log('Still '+ this.component.data.need_fetching_lsoas.length +' more losas to fetch...')// , this.component.data.completed, this.component.data.lsoas.length);
+                                                        if (config.debug) {
+                                                            console.log('Still '+ this.component.data.need_fetching_lsoas.length +' more losas to fetch...')// , this.component.data.completed, this.component.data.lsoas.length);
+                                                        }
                                                         // if (this.components.data.lsoas.length !== 0) {
                                                              var new_percentage = Math.floor(100*(1-(this.component.data.need_fetching_lsoas.length/this.component.data.lsoas.length)));
                                                              if (new_percentage !== 100) {
                                                                  if (new_percentage > this.component.data.percentage + 6) {
                                                                      this.component.data.percentage = new_percentage;
-                                                                     console.log('The percentage has changed enough to be worth a re-render. Now: '+new_percentage);
+                                                                     if (config.debug) {
+                                                                         console.log('The percentage has changed enough to be worth a re-render. Now: '+new_percentage);
+                                                                     }
                                                                      this.component.forceUpdate(); //setState({percentage: new_percentage})
                                                                  } else {
-                                                                     console.log('Not updating the percentage this time');
+                                                                     if (config.debug) {
+                                                                         console.log('Not updating the percentage this time');
+                                                                     }
                                                                  }
                                                              } else {
                                                                  this.component.data.percentage = 99;
@@ -819,15 +1089,21 @@ var MapData = React.createClass({
                                                         // At this point we might need to fetch some more
                                                         var run_next = function() {
                                                             if (this.component.data.need_fetching_lsoas.length !== 0 && this.component.data.completed > 0 && this.component.data.completed % config.parallel_loads === 0) {
-                                                                console.log('Fetching the first '+config.parallel_loads+' lsoas that aren\'t in pending_lsoas and adding these to pending_lsoas');
+                                                                if (config.debug) {
+                                                                    console.log('Fetching the first '+config.parallel_loads+' lsoas that aren\'t in pending_lsoas and adding these to pending_lsoas');
+                                                                }
                                                                 for (var i=0; i<config.parallel_loads; i++) {
                                                                     var lsoa = this.component.data.need_fetching_lsoas.shift()
                                                                     if (!lsoa) {
-                                                                        console.log('No such lsoa', this.component.data.need_fetching_lsoas);
+                                                                        if (config.debug) {
+                                                                            console.log('No such lsoa', this.component.data.need_fetching_lsoas);
+                                                                        }
                                                                     } else {
                                                                         this.component.data.pending_lsoas.push(lsoa);
                                                                         this.component.data.pending_lsoas_date[lsoa] = new Date();
-                                                                        console.log('Requesting geometry for '+lsoa);
+                                                                        if (config.debug) {
+                                                                            console.log('Requesting geometry for '+lsoa);
+                                                                        }
                                                                         getGeometry(lsoa).then(
                                                                             make_success().bind({'component': this.component, 'lsoa': lsoa, original_bbox: this.original_bbox}),
                                                                             failure
@@ -838,9 +1114,13 @@ var MapData = React.createClass({
                                                                     this.component.data.percentage = 99;
                                                                     this.component.data.percentage_counter += 1;
                                                                     var onTimeout = function() {
-                                                                        console.log(this.counter, this.component.data.percentage, this.component.data.percentage_counter);
+                                                                        if (config.debug) {
+                                                                            console.log(this.counter, this.component.data.percentage, this.component.data.percentage_counter);
+                                                                        }
                                                                         if (this.component.data.percentage_counter == this.counter) {
-                                                                            console.log('Setting percentage to -1');
+                                                                            if (config.debug) {
+                                                                                console.log('Setting percentage to -1');
+                                                                            }
                                                                             this.component.data.percentage = -1;
                                                                             this.component.forceUpdate();
                                                                         }
@@ -849,11 +1129,15 @@ var MapData = React.createClass({
                                                                         counter: this.component.data.percentage_counter+0
                                                                     })
                                                                     setTimeout(onTimeout, 1000)
-                                                                    console.log('Set the timeout')
+                                                                    if (config.debug) {
+                                                                        console.log('Set the timeout')
+                                                                    }
                                                                     this.component.forceUpdate();
                                                                 }
                                                             } else {
-                                                                console.log('Not a multiple of '+config.parallel_loads+', so we don\'t trigger the next fetch');
+                                                                if (config.debug) {
+                                                                    console.log('Not a multiple of '+config.parallel_loads+', so we don\'t trigger the next fetch');
+                                                                }
                                                             }
                                                         }.bind(this)
                                                             // if completed is a multiple of 4 and there are more to get:
@@ -994,6 +1278,7 @@ var Main = React.createClass({
                 summary={this.props.summary}
                 oa={this.props.query.oa}
                 lsoa={this.props.query.lsoa}
+                boundary_scores={this.props.boundary_scores}
             />
         );
         return (
@@ -1001,7 +1286,6 @@ var Main = React.createClass({
                 <Map
                     params={this.props.params}
                     query={this.props.query}
-                    max={this.props.max}
                     bbox={this.props.bbox}
                     colors={this.props.colors}
                     modifiers={this.props.modifiers}
@@ -1104,43 +1388,281 @@ var Chart = React.createClass({
     }
 });
 
+require('./popup.less');
 
 var OAPopup = React.createClass({
+    componentWillReceiveProps: function (newProps) {
+        if (newProps.oa !== this.props.oa) {
+            this.data = {
+                timeToBank: null,
+                postcode: null,
+                fareZone: null,
+                schools: null,
+                areaDescription: null,
+                rent: null,
+                geo: null,
+            }
+            this.getData();
+        }
+    },
+    componentWillMount: function() {
+        this.data = {
+            timeToBank: null,
+            postcode: null,
+            fareZone: null,
+            schools: null,
+            areaDescription: null,
+            rent: null,
+            geo: null,
+        }
+    },
+    componentDidMount: function() {
+        this.getData();
+    },
+    getData: function() {
+        resolveHash(
+            [
+                getRentFromOA(this.props.oa).then(
+                    function(result) {
+                        this.data.rent = result;
+                    }.bind(this)
+                ),
+                getTimeToBankFromOA(this.props.oa).then(
+                    function(result) {
+                        this.data.timeToBank = result;
+                    }.bind(this)
+                ),
+                getPostcodeFromOA(this.props.oa).then(
+                    function(result) {
+                        this.data.postcode = result;
+                    }.bind(this)
+                ),
+                getFareZoneFromOA(this.props.oa).then(
+                    function(result) {
+                        this.data.fareZone = result;
+                    }.bind(this)
+                ),
+                getSchoolsFromOA(this.props.oa).then(
+                    function(result) {
+                        this.data.schools = result;
+                    }.bind(this)
+                ),
+                getAreaDescriptionFromOA(this.props.oa).then(
+                    function(result) {
+                        this.data.areaDescription = result;
+                    }.bind(this)
+                ),
+                getGeospatialFromOA(this.props.oa).then(
+                    function(result) {
+                        this.data.geo = result;
+                    }.bind(this)
+                ),
+            ]
+        ).then(
+            function(result) {
+                this.forceUpdate();
+            }.bind(this)
+        )
+    },
+
     render: function() {
         // console.log(this.props.summary[this.props.oa])
-        if (!this.props.summary || !this.props.summary[this.props.oa]) {
+        if (!this.props.summary || !this.data.schools || !this.props.summary[this.props.oa]) {
             return null;
         } else {
+            // title={'Postcode: BR1, Fare Zone: 1, OA: '+this.props.query.oa}
+            var time_to_bank = null;
+            var schools = null;
+            if (this.data.schools) {
+                var schools_rows = [];
+                if (this.data.schools.PSchoolName1 !== 'no data') {
+                    schools_rows.push(
+                        <tr key="1"><td>Primary School</td><td>{this.data.schools.PSchoolName1}</td><td>{this.data.schools.PSchool1Percent}%</td></tr>
+                    )
+                }
+                if (this.data.schools.PSchoolName2 !== 'no data') {
+                    schools_rows.push(
+                        <tr key="2"><td>Primary School</td><td>{this.data.schools.PSchoolName2}</td><td>{this.data.schools.PSchool2Percent}%</td></tr>
+                    )
+                }
+                if (this.data.schools.PSchoolName3 !== 'no data') {
+                    schools_rows.push(
+                        <tr key="3"><td>Primary School</td><td>{this.data.schools.PSchoolName3}</td><td>{this.data.schools.PSchool3Percent}%</td></tr>
+                    )
+                }
+                if (this.data.schools.SSchoolName1 !== 'no data') {
+                    schools_rows.push(
+                        <tr key="4"><td>Secondary School</td><td>{this.data.schools.SSchoolName1}</td><td>{this.data.schools.SSchool1Percent}%</td></tr>
+                    )
+                }
+                if (this.data.schools.SSchoolName2 !== 'no data') {
+                    schools_rows.push(
+                        <tr key="5"><td>Secondary School</td><td>{this.data.schools.SSchoolName2}</td><td>{this.data.schools.SSchool2Percent}%</td></tr>
+                    )
+                }
+                if (this.data.schools.SSchoolName3 !== 'no data') {
+                    schools_rows.push(
+                        <tr key="6"><td>Secondary School</td><td>{this.data.schools.SSchoolName3}</td><td>{this.data.schools.SSchool3Percent}%</td></tr>
+                    )
+                }
+                schools = (
+                    <table className="mylondon-table schools table table-bordered">
+                        <tr>
+                            <th className="noborder"></th>
+                            <th>Name</th>
+                            <th>Percent</th>
+                        </tr>
+                        {schools_rows}
+                    </table>
+                )
+            }
+            if (this.data.timeToBank) {
+                time_to_bank = (
+                    <table className="mylondon-table transport table table-bordered">
+                        <tr>
+                            <th className="noborder"></th>
+                            <th>Time (mins)</th>
+                            <th>Distance (miles)</th>
+                        </tr>
+                        <tr>
+                            <td>Driving</td>
+                            <td>{this.data.timeToBank.driving_time_mins}</td>
+                            <td>{this.data.timeToBank.driving_distance_miles}</td>
+                        </tr>
+                        <tr>
+                            <td>Walking</td>
+                            <td>{this.data.timeToBank.walking_time_mins}</td>
+                            <td>{this.data.timeToBank.walking_distance_miles}</td>
+                        </tr>
+                        <tr>
+                            <td>Cycling</td>
+                            <td>{this.data.timeToBank.cycling_time_mins}</td>
+                            <td>{this.data.timeToBank.cycling_distance_miles}</td>
+                        </tr>
+                        <tr>
+                            <td>Public Transport</td>
+                            <td>{this.data.timeToBank.public_transport_time_mins}</td>
+                            <td>(no data)</td>
+                        </tr>
+                    </table>
+                )
+            }
             return (
-                <Modal {...this.props} bsStyle="primary" title={'Postcode: BR1, Fare Zone: 1, OA: '+this.props.query.oa} animation={false} backdrop={true}>
-                    <div className="modal-body">
-                        <OAPopupTabs 
-                            stats={[
-                                { "name" : "Number of Green Spaces",
-                                  "value" : Math.round( this.props.summary[this.props.oa].green_space * 100 ),
-                                  "colour": '#3fad46',
-                                  "icon": "logo-green-space.png",
-                                },
-                                { "name" : "Public Transport",
-                                  "value" : Math.round( this.props.summary[this.props.oa].transport * 100 ),
-                                  "colour": '#5bc0de',
-                                  "icon": "logo-transport.png",
-                                },
-                                { "name" : "Schools",
-                                  "value" : Math.round( this.props.summary[this.props.oa].schools * 100 ),
-                                  "colour": '#f0ad4e',
-                                  "icon": "logo-schools.png",
-                                },
-                                { "name" : "Safety",
-                                  "value" : Math.round( this.props.summary[this.props.oa].safety * 100 ),
-                                  "colour": '#d9534f',
-                                  "icon": "logo-crime.png",
-                                }
-                            ]}
-                        />
-                    </div>
-                    <div className="modal-footer">
-                        <Button onClick={this.props.onRequestHide}>Close</Button>
+                <Modal
+                    {...this.props}
+                    bsStyle="primary"
+                    animation={false}
+                    backdrop={true}
+                >
+                    <div className="modal-body" id="myLondonPopup">
+                        <div className="closeButton">
+                            <button
+                                type="button"
+                                className="close"
+                                aria-hidden="true"
+                                onClick={this.props.onRequestHide}
+                            >×</button>
+                        </div>
+                        <div className="scroller">
+                            <div className="section section-rent">
+                                <h2>
+                                    <img src="http/logo-rent.png" className="section-icon" />
+                                    Rent
+                                </h2>
+                                <div className="inner">
+                                    <dl>
+                                        <dt>Postcode District</dt>
+                                        <dd>
+                                            <code>{this.data.postcode}</code> (Useful for searching on property websites)
+                                        </dd>
+                                    </dl>
+                                    <table className="mylondon-table rent table table-bordered">
+                                        <thead>
+                                            <tr><th className="noborder"></th><th>Cost per month</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><th>1 Bed Property</th><td>&pound;{this.data.rent.Ave_rent_1_bedroom}</td></tr>
+                                            <tr><th>2 Bed Property</th><td>&pound;{this.data.rent.Ave_rent_2_bedroom}</td></tr>
+                                            <tr><th>3 Bed Property</th><td>&pound;{this.data.rent.Ave_rent_3_bedroom}</td></tr>
+                                            <tr><th>4 Bed Property</th><td>&pound;{this.data.rent.Ave_rent_4_bedroom}</td></tr>
+                                        </tbody>
+                                    </table>
+                                    <p className="text-muted last">
+                                        The budget slider on the map uses the value for a 1 bedroom property.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="section section-schools">
+                                <h2>
+                                    <img src="http/logo-schools.png" className="section-icon" />
+                                    Schools
+                                </h2>
+                                <div className="inner">
+                                    <p><strong>Overall: </strong>{display_score(this.props.boundary_scores, this.props.summary[this.props.oa].schools)}</p>
+                                    {schools}
+                                    <p className="last">
+                                        <a href={"https://www.london.gov.uk/webmaps/lsa/?x=" + this.data.geo.EASTING + '&y=' + this.data.geo.NORTHING}>
+                                            View more detailed information for this area on the schools atlas
+                                        </a>
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="section section-transport">
+                                <h2>
+                                    <img src="http/logo-transport.png" className="section-icon" />
+                                    Transport
+                                </h2>
+                                <div className="inner">
+                                    <p><strong>Overall: </strong>{display_score(this.props.boundary_scores, this.props.summary[this.props.oa].transport)}</p>
+                                    <p className="last"><strong>Fare Zone: {this.data.fareZone}</strong></p>
+                                    {time_to_bank}
+                                </div>
+                            </div>
+                            <div className="section section-green">
+                                <h2>
+                                    <img src="http/logo-green-space.png" className="section-icon" />
+                                    Green Space
+                                </h2>
+                                <div className="inner">
+                                    <p className="last"><strong>Overall: </strong>{display_score(this.props.boundary_scores, this.props.summary[this.props.oa].green_space)}</p>
+                                </div>
+                            </div>
+                            <div className="section section-crime">
+                                <h2>
+                                    <img src="http/logo-crime.png" className="section-icon" />
+                                    Community Safety
+                                </h2>
+                                <div className="inner">
+                                    <p><strong>Overall: </strong>{display_score(this.props.boundary_scores, this.props.summary[this.props.oa].safety)}</p>
+                                    <p className="last">
+                                        <a href={"http://maps.met.police.uk/index.php?areacode=" + this.data.geo.lsoa + "&crimetype=8"}>
+                                            View more detailed information for this area on the MET police crime map
+                                        </a>
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="section section-geospatial">
+                                <h2>
+                                    <img src="http/logo-geospatial.png" className="section-icon" />
+                                    Area Information
+                                </h2>
+                                <div className="inner">
+                                    <p>{this.data.areaDescription.General_description}</p>
+                                    <p>{this.data.areaDescription.OA_description}</p>
+                                </div>
+                            </div>
+                            <table className="mylondon-table geospatial-information table table-bordered">
+                                <tbody>
+                                <tr><th>Postcode District</th><td>{this.data.postcode}</td></tr>
+                                <tr><th>#LSOA</th><td>{this.data.geo.lsoa}</td></tr>
+                                <tr><th>#OA</th><td>{this.data.geo.oa}</td></tr>
+                                <tr><th>Easting</th><td>{this.data.geo.EASTING}</td></tr>
+                                <tr><th>Northing</th><td>{this.data.geo.NORTHING}</td></tr>
+                                <tr><th>Latitude</th><td>{this.data.geo.Latitude}</td></tr>
+                                <tr><th>Longitude</th><td>{this.data.geo.Longitude}</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </Modal>
             );
@@ -1148,74 +1670,6 @@ var OAPopup = React.createClass({
     }
 });
 
-
-var OAPopupTabs = React.createClass({
-    getInitialState() {
-        return {
-            key: 1
-        };
-    },
-
-    handleSelect(key) {
-        // alert('selected ' + key);
-        this.setState({key});
-    },
-
-    render() {
-        return (
-            <TabbedArea activeKey={this.state.key} onSelect={this.handleSelect}>
-                <TabPane eventKey={1} tab='Chart'>
-                    <Chart stats={this.props.stats} />
-                </TabPane>
-                <TabPane eventKey={2} tab='Description'>
-                    <p>Many of the residents of these neighbourhoods are employed in the financial, insurance and real estate industries, or are information and communications industry professionals engaged in a range of scientific and technical activities. Residents are more likely than average to be White.</p>
-                    <h2>General_description</h2>
-                    <p>This Group comprises young professionals working in the science, technology, finance and insurance sectors. Additionally, large numbers of students rent rooms in centrally located communal establishments. Most others rent privately owned flats, large numbers of which are found in central locations. There is high representation from pre 2001 EU countries, and also high representation of households from Chinese, Arab and other minority backgrounds.</p>
-
-                </TabPane>
-                <TabPane eventKey={3} tab='Travel to Bank'>
-                    <pre>
-driving_distance_miles: "0.99",
-<br/>walking_time_mins: "14",
-<br/>cycling_distance_miles: "0.98",
-<br/>walking_distance_miles: "0.73",
-<br/>public_transport_time_mins: "14",
-<br/>driving_time_mins: "7",
-<br/>cycling_time_mins: "7",
-                    </pre>
-                </TabPane>
-                <TabPane eventKey={4} tab='Schools'>
-<pre>
-SSchool2Percent: "15",
-<br/>PSchool1Percent: "82",
-<br/>PSchoolName3: "no data",
-<br/>PSchoolName2: "no data",
-<br/>PSchoolName1: "Prior Weston Primary School and Children's Centre",
-<br/>SSchoolName1: "Haggerston School",
-<br/>SSchoolName2: "The City Academy, Hackney",
-<br/>SSchoolName3: "no data",
-<br/>PSchool2Percent: "no data",
-<br/>PSchool3Percent: "no data",
-<br/>SSchool1Percent: "19",
-<br/>SSchool3Percent: "no data"
-</pre>
-                </TabPane>
-            </TabbedArea>
-        );
-    }
-});
-
-
-                // .html(function(d) {
-                //     return '<div id="tsc">Click for cycling distance to bank in miles</div>';
-                // })
-        // document.getElementById('tsc').onclick = function(e) {
-        //     getTimeToBank(this.props.oa).then(
-        //         function(result) {
-        //             alert(result.cycling_distance_miles);
-        //         }
-        //     )
-        // }.bind(this);
 
 var App = React.createClass({
 

@@ -19,7 +19,8 @@
     "react-bootstrap-slider": "0.0.5",
     "react-dnd": "0.9.8",
     "react-router": "0.13.2",
-    "superagent": "1.1.0"
+    "superagent": "1.1.0",
+    "when": "3.7.3"
   },
   "devDependencies": {
     "babel-core": "5.0.12",
@@ -35,7 +36,9 @@
     "karma-cli": "0.0.4",
     "karma-mocha": "0.1.10",
     "karma-sourcemap-loader": "0.3.4",
-    "karma-webpack": "1.5.0",
+    "karma-webpack": "1.9.10",
+    "less-loader": "2.2.0",
+    "raw-loader": "0.5.1",
     "mocha": "2.2.4",
     "react-hot-loader": "1.2.4",
     "style-loader": "0.9.0",

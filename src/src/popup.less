@@ -1,0 +1,68 @@
+#myLondonPopup {
+
+    background-image: url("http/grey_@2X.png");
+    max-height: 500px;
+    overflow: hidden;
+    margin: 0px auto;
+    padding: 0px;
+    //padding-bottom: 20px;
+    border-radius: 10px;
+
+    .closeButton {
+        right: 15px;
+        top: 9px;
+        position: absolute;
+        z-index: 10;
+    }
+    .scroller {
+        max-height: 500px;
+        padding-left: 20px;
+        padding-right: 40px;
+        overflow: scroll;
+    }
+
+    .section {
+        @indent: 50px;
+        @padding: 15px;
+
+        padding-bottom: 30px;
+        padding-left: 10px;
+        padding-top: 15px;
+
+        
+        .inner {
+            background: #fff;
+            margin-left: @indent - @padding;
+            padding: @padding;
+            //margin-left: -30px;
+            //padding: 10px 30px;
+            border-radius: 10px;
+        }
+
+        p.last {
+            margin-bottom: 0px;
+        }
+
+        img.section-icon {
+            //margin-left: -10px+@indent;
+            margin-right: -2px+10px; // Nudge over so fonts line up
+            width: -10px+@indent;
+            margin-top: -6px;
+        }
+
+    }
+
+    table.mylondon-table {
+        border: 0px;
+        tr { border: 0px; }
+        td, th { border: 1px solid #ddd; }
+        background: #fff;
+        th.noborder {
+            border-top: 0px;
+            border-left: 0px;
+        }
+    }
+    table.rent {
+        max-width: 330px;
+    }
+}

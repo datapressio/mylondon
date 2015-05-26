@@ -11,12 +11,13 @@ module.exports = {
 
   module: {
     loaders: [
-      { test: /\.css$/, loader: 'style-loader!css-loader' },
-      { test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "url-loader?limit=10000&minetype=application/font-woff" },
-      { test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "file-loader" },
+      { test: /\.css$/, loader: 'style!css' },
+      { test: /\.less$/, loader: 'style!raw!less' },
+      { test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader?limit=10000&minetype=application/font-woff' },
+      { test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'file-loader' },
       { test: /\.jsx$/, loaders: ['react-hot-loader', 'babel'], exclude: /node_modules/ },
       { test: /\.js$/, loaders: ['react-hot-loader', 'babel'], exclude: /node_modules/ },
-      { test: /\.png$/, loaders: ["url-loader?limit=10000"], exclude: /node_modules/},
+      { test: /\.png$/, loaders: ['url-loader?limit=10000'], exclude: /node_modules/},
       { test: /\.json$/, loaders: ['json'], exclude: /node_modules/ }
     ]
   },

@@ -1,6 +1,6 @@
 var React = require('react');
 var Router = require('react-router');
-var config = require('../../data.jsx')
+var config = require('../../config.jsx')
 require('./map.css');
 // Doesn't load as simply leaflet-minimap
 require('../../../node_modules/leaflet-minimap/dist/Control.MiniMap.min.js');
