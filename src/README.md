@@ -17,6 +17,15 @@ On Mac:
 brew install node
 ~~~
 
+Get the code:
+
+~~~
+git clone git@github.com:datapressio/mylondon.git
+cd mylondon
+git checkout react-source
+cd src
+~~~
+
 Build the NPM dependencies and fetch the JS dependencies we need:
 
 ~~~

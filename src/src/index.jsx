@@ -29,7 +29,7 @@ var d3 = require('d3');
 // These fail due to dependant images not loading, we include the CSS in the HTML instead.
 // require('../node_modules/leaflet/dist/leaflet.css');
 // require('../node_modules/leaflet-minimap/dist/Control.MiniMap.min.css');
-require('../node_modules/react-bootstrap-slider/node_modules/bootstrap/dist/css/bootstrap.css');
+require('../node_modules/bootstrap/dist/css/bootstrap.css');
 var resolveHash = require('when/keys').all;
 
 function objectSize(obj) {
@@ -1481,7 +1481,6 @@ var Chart = React.createClass({
     }
 });
 
-require('./popup.less');
 
 var OAPopup = React.createClass({
     componentWillReceiveProps: function (newProps) {
