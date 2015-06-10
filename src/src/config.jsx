@@ -26,25 +26,25 @@ var raw_data = {
             id: 1,
             text: 'Public Transport',
             name: 'transport',
-            icon: '/http/logo-transport.png',
+            icon: 'http/logo-transport.png',
         },
         2: {
             id: 2,
             text: 'Number of Green Spaces',
             name: 'green_space',
-            icon: '/http/logo-green-space.png',
+            icon: 'http/logo-green-space.png',
         }, 
         3: {
             id: 3,
             text: 'Safety',
             name: 'safety',
-            icon: '/http/logo-crime.png',
+            icon: 'http/logo-crime.png',
         }, 
         4: {
             id: 4,
             text: 'Schools',
             name: 'schools',
-            icon: '/http/logo-schools.png',
+            icon: 'http/logo-schools.png',
         }
     },
 }

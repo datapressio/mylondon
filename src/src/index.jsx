@@ -80,12 +80,6 @@ var config = require('./config.jsx')
 
 var request = require('superagent');
 
-var HOST = 'localhost:8000'
-//var HOST = '192.168.0.4:8000'
-//var HOST = '10.14.3.68:8000'
-// var HOST = 's26.datapress.io'
-
-
 var calculate_bucket = function(boundary_scores, value) {
     // Assume best color
     var bucket = 7;
@@ -467,24 +461,25 @@ var getPostcodeData = function(postcode) {
         console.log("Querying openstreet map for a postcode: ", postcode)
     }
     return new Promise(function (resolve, reject) {
-        request.get('http://'+HOST+'/postcode/'+postcode)
-        .end(function (err, res) {
-            if (err) {
-                console.error('Error:' + err);
-                reject(err);
-            } else if (!res.ok) {
-                console.error('Not OK');
-                reject(res.ok);
-            } else {
-                resolve(res.body);
-            }
-        });
+        reject("Error getting postcode")
     });
+   //     request.get('http://'+HOST+'/postcode/'+postcode)
+   //     .end(function (err, res) {
+   //         if (err) {
+   //             console.error('Error:' + err);
+   //             reject(err);
+   //         } else if (!res.ok) {
+   //             console.error('Not OK');
+   //             reject(res.ok);
+   //         } else {
+   //             resolve(res.body);
+   //         }
+   //     });
+   // });
 };
 
 
 var getGeometry = function(lsoa) {
-        //request.get('http://'+HOST+'/lsoa_geojson/'+lsoa+'.json')
     return new Promise(function (resolve, reject) {
         request.get('http://geojson.datapress.io.s3.amazonaws.com/data/'+lsoa+'.json')
         .query({})
@@ -588,6 +583,7 @@ var MapData = React.createClass({
         //console.log('componentDidMount')
         this.data = {
             summary: null,
+            oa: null,
             bbox_data: null,
             budget: null,
             boundary_scores: [],
@@ -691,7 +687,7 @@ var MapData = React.createClass({
         return layer;
     },
 
-    set_colors: function(layer, boundary_scores, summary, budget, colors, modifiers, weight) {
+    set_colors: function(cur_oa, layer, boundary_scores, summary, budget, colors, modifiers, weight) {
         // Need to calculate the value for every OA, so that we can assign a rank number to each
         // console.error(boundary_scores);
         for (var oa in layer.oas) {
@@ -701,15 +697,28 @@ var MapData = React.createClass({
                     // console.log('No summary data for ', oa);
                 } else {
                     var data = summary[oa];
+                    var borderColor = '#b200ae';
                     if (budget !== 1000 && budget < data.rent) {
                         // console.log('Budget less than rent in '+oa+', setting red');
-                        layer.oas[oa].setStyle({
-                            stroke: true,
-                            color: '#0033ff', //'#d9534f', // '#2E0854', // '#FFFF00', //'#d9534f', //'#0033ff',
-                            weight: weight,
-                            fillOpacity: (0.3),
-                            opacity: 0.15,
-                        });
+                        if (cur_oa === oa) {
+                            layer.oas[oa].setStyle({
+                                stroke: true,
+                                color: borderColor,
+                                weight: 5,
+                                fillOpacity: (0.3),
+                                fillColor: '#ffffff',
+                                opacity: 1,
+                            });
+                        } else {
+                            layer.oas[oa].setStyle({
+                                stroke: true,
+                                color: '#0033ff',
+                                weight: weight,
+                                fillOpacity: (0.3),
+                                fillColor: '#0033ff',
+                                opacity: 0.15,
+                            });
+                        }
                     } else {
                         // console.log('Calculating rank for '+oa, this.calculate_rank);
 
@@ -720,14 +729,25 @@ var MapData = React.createClass({
 
                         var bucket = calculate_bucket(boundary_scores, value);
                         // console.error(value, bucket, colors[bucket]);
-                        layer.oas[oa].setStyle({
-                            color: colors[bucket],
-                            stroke: true,
-                            weight: weight,
-                            fillOpacity: (0.5 + (bucket/7)/3),
-                            //fillOpacity: (0.3 + (bucket/7)/1.3),
-                            //opacity: (0.1 + (bucket/7)/1.3)/4,
-                        });
+                        if (cur_oa === oa) {
+                            layer.oas[oa].setStyle({
+                                color: borderColor,
+                                stroke: true,
+                                weight: 5,
+                                fillOpacity: (0.5 + (bucket/7)/3),
+                                opacity: 1,
+                                fillColor: '#ffffff',
+                            })
+                        } else {
+                            layer.oas[oa].setStyle({
+                                color: colors[bucket],
+                                stroke: true,
+                                weight: weight,
+                                fillOpacity: (0.5 + (bucket/7)/3),
+                                opacity: (0.5 + (bucket/7)/3),
+                                fillColor: colors[bucket],
+                            });
+                        }
                     }
                 }
             }
@@ -736,6 +756,7 @@ var MapData = React.createClass({
 
 
     getData(props) {
+        // console.log("OA: ", props.query.oa, ',', this.data.oa);
         // Parse URL information
         var zoom = parseInt(props.query.zoom || '15')
         var modal = props.query.oa || null;
@@ -857,8 +878,9 @@ var MapData = React.createClass({
             return;
         }
 
+        console.log('here', this.data.lsoas.length, props.query.oa);
         // Only re-colour the polygons if something that would cause their colour to change has changed
-        if (this.data.budget !== budget || this.data.priority !== priority_order.join('|') || this.data.disabled_themes !== disabled_themes.join('|') && this.data.summary) {
+        if ((this.data.budget !== budget || this.data.priority !== priority_order.join('|') || this.data.disabled_themes !== disabled_themes.join('|') || this.data.oa !== props.query.oa) && this.data.summary) {
             if (config.debug) {
                 console.log('The budget, disabled themes or priority have changed, re-colour the polygons');
             }
@@ -880,6 +902,7 @@ var MapData = React.createClass({
             }
             for (var i=0; i<this.data.lsoas.length; i++) {
                 this.set_colors(
+                    props.query.oa,
                     this.data.lsoa_layers[this.data.lsoas[i]],
                     this.data.boundary_scores,
                     this.data.summary,
@@ -890,6 +913,7 @@ var MapData = React.createClass({
                     weight
                 );
             };
+            this.data.oa = props.query.oa;
             this.data.budget = budget;
             this.data.priority = priority_order.join('|')
             this.data.disabled_themes = disabled_themes.join('|')
@@ -942,6 +966,7 @@ var MapData = React.createClass({
                                 console.log('Setting the colors for ' + lsoa);
                             }
                             this.component.set_colors(
+                                this.component.props.query.oa,
                                 this.component.data.lsoa_layers[lsoa],
                                 this.component.data.boundary_scores,
                                 this.component.data.summary,
@@ -1067,6 +1092,7 @@ var MapData = React.createClass({
                                                     console.log('Setting the colors for ' + lsoa);
                                                 }
                                                 this.component.set_colors(
+                                                    this.component.props.query.oa,
                                                     this.component.data.lsoa_layers[lsoa],
                                                     this.component.data.boundary_scores,
                                                     this.component.data.summary,
@@ -1294,13 +1320,17 @@ var Panel = React.createClass({
                 </div>
              )
         }
+        var className = "settings slide-in"
+        if (this.props.query.oa) {
+            className = "settings slide-out"
+        }
         return (
             <div>
                {loading}
-               <div className="settings" style={{
+               <div className={className} style={{
                    height: 400, //window.innerHeight - 250,
                }}>
-                   <h2 style={{marginBottom: '19px', marginTop: '0px'}}><img src="/http/final-800.png" style={{width: '100%'}}/></h2>
+                   <h2 style={{marginBottom: '19px', marginTop: '0px'}}><img src="http/final-800.png" style={{width: '100%'}}/></h2>
 
                    <form onSubmit={this.onSearch}>
                        <Input ref="postcode" type='search' placeholder='Postcode' />
@@ -1334,7 +1364,7 @@ var Main = React.createClass({
     render() {
         var modal = this.renderModal(
             <OAPopup
-                backdrop={true}
+                backdrop={false}
                 onRequestHide={this.hideModal}
                 params={this.props.params}
                 query={this.props.query}
@@ -1399,7 +1429,7 @@ var Chart = React.createClass({
         boxes.append("img")
             .classed("icon", true)
             .attr("src", function(d) {
-                return '/http/'+d['icon'];
+                return 'http/'+d['icon'];
              });
         boxes.append("div")
             .classed("name", true)
@@ -1615,7 +1645,7 @@ var OAPopup = React.createClass({
                     {...this.props}
                     bsStyle="primary"
                     animation={false}
-                    backdrop={true}
+                    backdrop={this.props.backdrop}
                 >
                     <div className="modal-body" id="myLondonPopup">
                         <div className="closeButton">

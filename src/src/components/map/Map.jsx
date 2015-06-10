@@ -66,21 +66,21 @@ var Map = React.createClass({
         var url = 'http://ojw.dev.openstreetmap.org/map/tiles/rail/{z}/{x}/{y}.png'
 
         // Note that you cannot use the same layer object again, as that will confuse the two map controls
-        var osmAttrib='Map data &copy; OpenStreetMap contributors';
-        var osm2 = new L.TileLayer(url, {minZoom: 0, maxZoom: 11, attribution: osmAttrib });
-        var miniMap = new L.Control.MiniMap(
-            osm2,
-            {
-                zoomLevelFixed: 10,
-                // autoToggleDisplay: true,
-                position: 'bottomleft',
-                width: 295,
-                height: 220,
-                toggleDisplay: true
-            }
-        ).addTo(map);
+        // var osmAttrib='Map data &copy; OpenStreetMap contributors';
+        // var osm2 = new L.TileLayer(url, {minZoom: 0, maxZoom: 11, attribution: osmAttrib });
+        // var miniMap = new L.Control.MiniMap(
+        //     osm2,
+        //     {
+        //         zoomLevelFixed: 10,
+        //         // autoToggleDisplay: true,
+        //         position: 'bottomleft',
+        //         width: 295,
+        //         height: 220,
+        //         toggleDisplay: true
+        //     }
+        // ).addTo(map);
         L.tileLayer(
-            'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            'http://{s}.tiles.mapbox.com/v3/examples.map-20v6611k/{z}/{x}/{y}.png',
             // 'https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png',
             {
                 maxZoom: 18,

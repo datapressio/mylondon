@@ -78,3 +78,21 @@ table td.key {
 .tab-content {
     padding-top: 20px;
 }
+
+
+
+.slide-out {
+    transition: left 0.27s;
+    position: fixed;
+    left: -350px;
+    transition-timing-function: cubic-bezier(0.8,0,0.8,1);
+}
+
+.slide-in {
+    transition: left 0.27s;
+    position: fixed;
+    left: 10px;
+    transition-timing-function: cubic-bezier(0.8,0,0.8,1);
+}
+
+

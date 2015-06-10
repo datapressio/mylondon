@@ -23,9 +23,9 @@
     "when": "3.7.3"
   },
   "devDependencies": {
+    "babel": "5.0.12",
     "babel-core": "5.0.12",
     "babel-loader": "5.0.0",
-    "babel": "5.0.12",
     "css-loader": "0.9.1",
     "expect": "1.6.0",
     "file-loader": "0.8.1",
@@ -38,8 +38,9 @@
     "karma-sourcemap-loader": "0.3.4",
     "karma-webpack": "1.9.10",
     "less-loader": "2.2.0",
-    "raw-loader": "0.5.1",
     "mocha": "2.2.4",
+    "pmux": "0.0.1",
+    "raw-loader": "0.5.1",
     "react-hot-loader": "1.2.4",
     "style-loader": "0.9.0",
     "url-loader": "0.5.5",
