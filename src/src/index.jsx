@@ -24,6 +24,7 @@ Cheating on:
 
 */
 
+
 var L = require('leaflet');
 var d3 = require('d3');
 // These fail due to dependant images not loading, we include the CSS in the HTML instead.
@@ -339,7 +340,7 @@ var getLSOAs = function(bbox_data, bbox) {
                 var found = false;
                 for (var j=0; j<lsoas.length; j++) {
                     if (row.lsoa === lsoas[j]) {
-                        found = true; 
+                        found = true;
                         break;
                     }
                 }
@@ -434,7 +435,7 @@ var getBbox = function() {
                     var found = false;
                     //for (var j=0; j<lsoas.length; j++) {
                     //    if (parts[0] === lsoas[j]) {
-                    //        found = true; 
+                    //        found = true;
                     //        break;
                     //    }
                     //}
@@ -1351,8 +1352,21 @@ var Main = React.createClass({
     },
 
     renderModal(modal) {
-        if (this.props.modal) {
-            return modal
+        return null; //return (<div id="mycity-popup"></div>);
+    },
+
+    componentDidUpdate(prevProps, prevState) {
+            console.log('Updated main', this.props.modal, this.props.query.oa, MyCity.oa);
+        if (this.props.modal && (MyCity.oa !== this.props.query.oa)) {
+            MyCity.oa = this.props.query.oa;
+            MyCity.lsoa = this.props.query.lsoa;
+            MyCity.plugin.onClickOA(this.props.query.oa, this.props.query.lsoa);
+            MyCity.close = function() {
+                var query = objectAssign({}, this.props.query, {oa: undefined, lsoa: undefined});
+                this.context.router.transitionTo('map', this.props.params, query);
+                MyCity.oa = undefined;
+            }.bind(this);
+            PopupDataFetcher.getData(this.props.query.oa)
         }
     },
 
@@ -1482,6 +1496,67 @@ var Chart = React.createClass({
 });
 
 
+var PopupDataFetcher = {
+    data: {
+        oa: null,
+        timeToBank: null,
+        postcode: null,
+        fareZone: null,
+        schools: null,
+        areaDescription: null,
+        rent: null,
+        geo: null
+    },
+    getData: function(oa) {
+        resolveHash(
+            [
+                getRentFromOA(oa).then(
+                    function(result) {
+                        this.data.rent = result;
+                    }.bind(this)
+                ),
+                getTimeToBankFromOA(oa).then(
+                    function(result) {
+                        this.data.timeToBank = result;
+                    }.bind(this)
+                ),
+                getPostcodeFromOA(oa).then(
+                    function(result) {
+                        this.data.postcode = result;
+                    }.bind(this)
+                ),
+                getFareZoneFromOA(oa).then(
+                    function(result) {
+                        this.data.fareZone = result;
+                    }.bind(this)
+                ),
+                getSchoolsFromOA(oa).then(
+                    function(result) {
+                        this.data.schools = result;
+                    }.bind(this)
+                ),
+                getAreaDescriptionFromOA(oa).then(
+                    function(result) {
+                        this.data.areaDescription = result;
+                    }.bind(this)
+                ),
+                getGeospatialFromOA(oa).then(
+                    function(result) {
+                        this.data.geo = result;
+                    }.bind(this)
+                ),
+            ]
+        ).then(
+            function(result) {
+                this.data.oa = oa;
+                MyCity.plugin.onReceiveData(this.data);
+                //this.forceUpdate();
+            }.bind(this)
+        )
+    }
+};
+
+
 var OAPopup = React.createClass({
     componentWillReceiveProps: function (newProps) {
         if (newProps.oa !== this.props.oa) {
@@ -1552,6 +1627,7 @@ var OAPopup = React.createClass({
             ]
         ).then(
             function(result) {
+                MyCity.plugin.onReceiveData(this.data);
                 this.forceUpdate();
             }.bind(this)
         )

@@ -12,9 +12,66 @@
     <script src="bower_components/console-polyfill/index.js"></script>
     <![endif]-->
     <link rel="stylesheet" href="http/leaflet.css">
-    <link rel="stylesheet" href="http/Control.FullScreen.css">
+    <!-- MyCity Customisations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
+    <style>
+    #mycity-popup {
+        display: none;
+        position: fixed;
+        z-index: 100;
+        width: 300px;
+        height: 100%;
+        top: 0px;
+        right: 0px;
+        background: #fff;
+        overflow: scroll;
+    }
+    .bar {
+        background: #ccc;
+    }
+    </style>
+    <script>
+    // Set up global namespace for popup
+    window.MyCity = {
+        plugin: {
+            onClickOA: function(oa, lsoa) {
+                // alert('Clicked OA: ' + oa + ', LSOA: ' + lsoa);
+                var popup = document.getElementById('mycity-popup')
+                popup.innerHTML = 'OA <a href="javascript: MyCity.plugin.close()">x</a>';
+                popup.style.display = 'block';
+            },
+            onReceiveData: function(data) {
+                console.info(data);
+                d3.select(".mycity-popup")
+                    .selectAll("div")
+                    .data([
+                        data.rent.Ave_rent_1_bedroom,
+                        data.rent.Ave_rent_2_bedroom,
+                        data.rent.Ave_rent_3_bedroom,
+                        data.rent.Ave_rent_4_bedroom
+                    ]).enter().append("div")
+                        .style("width", function(d) { return d * 40/500 + "px"; })
+                        .style("background", function(d) { return "#ccc" })
+                        .text(function(d) { return d; })
+                    ;
+
+                var popup = document.getElementById('mycity-popup')
+                popup.innerHTML += JSON.stringify(data);
+                //alert('Received data for OA: ' + data.oa);
+            },
+            close: function() {
+                var popup = document.getElementById('mycity-popup')
+                popup.style.display = 'none';
+                popup.innerHTML = '';
+                MyCity.close();
+            }
+        }
+    };
+    </script>
+    <!-- End MyCity Customisations -->
   </head>
   <body>
+    <div id="mycity-popup" class="mycity-popup"><div></div></div>
     <div id="App"></div>
     <script src="build/main.js"></script>
   </body>
