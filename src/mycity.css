@@ -1,0 +1,180 @@
+@import url("/http/webfontkit/stylesheet.css");
+h1,h2,h3,h4{ 
+  font-family:"p22_johnston_undergroundRg" !important;
+  font-weight:900;
+}
+
+.main-logo  {
+  position: relative;
+  height: 50px;
+  color: #5da6a8;
+  border-top: 3px solid #5da6a8;
+  border-bottom: 3px solid #5da6a8;
+}
+.main-logo .middle {
+  position: absolute;
+  font-size: 32px;
+  line-height: 44px;
+  vertical-align: middle;
+  margin: 0 0 0 0;
+  width: 270px;
+  margin-left: -135px;
+  left: 50%;
+  text-align: center;
+}
+.main-logo .middle .close-button {
+  display: block;
+  float: right;
+  color: #5da6a8;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  font-size: 30px;
+  border-radius: 15px;
+  margin: 6px 10px 0 10px;
+  background: rgba(93,166,168,0.3);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+}
+.main-logo .middle .close-button:hover {
+  color: #fff;
+  background: #5da6a8;
+}
+.main-logo .line {
+  position: absolute;
+  height: 3px;
+  background: #5da6a8;
+  width: 15%;
+  top: 50%;
+  margin-top: -2px;
+  display: none;
+}
+.main-logo .line-left {
+  left: 0px;
+}
+.main-logo .line-right {
+  right: 0px;
+}
+@media(min-width: 960px) {
+  .main-logo .line {
+    display: block;
+  }
+}
+@media(min-width: 1200px) {
+  .main-logo .line {
+    display: block;
+    width: 24%;
+  }
+}
+
+
+
+
+#mycity-popup {
+    position: fixed;
+    z-index: 100;
+    width: 45%;
+    height: 100%;
+    top: 0px;
+    right: -45%;
+    background: rgba(0,0,0,0.80);
+    color: #fff;
+    overflow: scroll;
+    padding: 15px;
+
+    -webkit-transition: right 250ms ease-in-out;
+    -moz-transition: right 250ms ease-in-out;
+    transition: right 250ms ease-in-out;
+}
+.close-button:hover {
+  opacity: 1;
+  color: #fff;
+  text-decoration: none;
+}
+
+
+.box {
+  border-bottom: 3px solid #5da6a8;
+  min-height: 20px;
+  padding: 14px 0 ;
+}
+.box h2 {
+  text-align: center;
+  font-size: 21px;
+  line-height: 21px;
+  margin-top: 0px;
+  margin-bottom: 2px;
+}
+.box h3 {
+  text-align: center;
+  font-size: 15px;
+  line-height: 15px;
+  margin-top: 0px;
+}
+.box .graph {
+  margin: 0 auto;
+  width: 240px;
+  min-height: 200px;
+}
+.box.box-rent        h2 { color: #95be32; }
+.box.box-schools     h2 { color: #d96a63; }
+.box.box-transport   h2 { color: #edd444; }
+.box.box-greenspace  h2 { color: #96c032; }
+.box.box-safety      h2 { color: #5da5a7; }
+.box.box-information h2 { color: #e6ddc8; }
+/* ======= */
+.box.box-rent        h3 .color { color: #95be32; }
+.box.box-schools     h3 .color { color: #d96a63; }
+.box.box-transport   h3 .color { color: #edd444; }
+.box.box-greenspace  h3 .color { color: #96c032; }
+.box.box-safety      h3 .color { color: #5da5a7; }
+.box.box-information h3 .color { color: #e6ddc8; }
+/* ======= */
+.safety-graph {
+  width: 250px;
+  height: 200px;
+  position: relative;
+}
+.safety-graph > div {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  width: 100%;
+  transition: width 250ms;
+}
+.safety-graph .noclip {
+  opacity: 0.3;
+}
+.safety-graph .clip {
+  border-right: 1px solid transparent;
+}
+.safety-graph > div > img {
+  width: 250px;
+}
+
+/* ======= */
+.box.box-information .graph strong {
+  display: block;
+  margin-bottom: 3px;
+}
+.box.box-information .graph blockquote {
+  font-size: 12px;
+}
+
+
+
+@media(min-width: 1200px) {
+  .box-table {
+    display: table;
+    width: 100%;
+  }
+  .box-row {
+    display: table-row;
+  }
+  .box {
+    display: table-cell;
+  }
+  .box:first-child {
+    border-right: 3px solid #5da6a8;
+  }
+}
