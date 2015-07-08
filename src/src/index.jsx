@@ -412,8 +412,26 @@ var getSummary = function() {
                         schools: parseFloat(parts[7]),
                     };
                 }
-                window.summary = summary;
+                var themes = ['safety', 'schools', 'transport', 'green_space'];
+                var theme_boundaries = {};
+                for (var t=0; t<themes.length; t++) {
+                    var theme = themes[t];
+                    var all = [];
+                    for (var d in summary) {
+                        if (summary.hasOwnProperty(d)) {
+                            all.push(summary[d][theme]);
+                        }
+                    }
+                    all.sort();
+                    var boundary_number = all.length / 8;
+                    theme_boundaries[theme] = [];
+                    for (var i=1; i<8; i++) {
+                        theme_boundaries[theme].push(all[parseInt(i*boundary_number)])
+                    }
+                }
+                console.info('Individual theme boundaries: ', theme_boundaries);
                 resolve({
+                    theme_boundaries: theme_boundaries,
                     summary: summary,
                     lsoa_to_oa: lsoa_to_oa,
                     oa_to_lsoa: oa_to_lsoa,
@@ -511,12 +529,12 @@ var getGeometry = function(lsoa) {
 };
 
 
-window.layer_store = {
-    layers: {},
-    geometry_pending: {},
-    data: {},
-    lsoas: [],
-};
+//window.layer_store = {
+//    layers: {},
+//    geometry_pending: {},
+//    data: {},
+//    lsoas: [],
+//};
 
 
 var MapData = React.createClass({
@@ -574,6 +592,7 @@ var MapData = React.createClass({
             geometry={this.data.geometry}
             summary={this.data.summary}
             boundary_scores={this.data.boundary_scores}
+            theme_boundaries={this.data.theme_boundaries}
             data_updated={this.state.data_updated}
             onChangePostcode={this.onChangePostcode}
         />
@@ -598,6 +617,7 @@ var MapData = React.createClass({
             bbox_data: null,
             budget: null,
             boundary_scores: [],
+            theme_boundaries: null,
             priority: null,
             bbox: null,
             map: null,
@@ -812,7 +832,7 @@ var MapData = React.createClass({
             }
             cards.push(theme);
         }
-        console.info(modifiers);
+        console.info('Modifier values', modifiers);
 
         // Only start fetching the summary data if we haven't got it or started fetching it yet
         if (!objectSize(this.data.summary) && !this.data.summary_pending) {
@@ -826,11 +846,12 @@ var MapData = React.createClass({
                     this.component.data.lsoa_to_oa = result[1].lsoa_to_oa;
                     this.component.data.oa_to_lsoa = result[1].oa_to_lsoa;
                     this.component.data.summary = result[1].summary;
+                    this.component.data.theme_boundaries = result[1].theme_boundaries;
                     this.component.data.summary_pending = false;
                     if (config.debug) {
                         console.log('Got summary data, getting data', this.component)
                     }
-                    console.log(this.component.data.bbox_data);
+                    //console.log(this.component.data.bbox_data);
                     this.component.getData(this.component.props); // Whatever is set now (for some reason props doesn't work?)
                     if (config.debug) {
                         console.log('Called getData', this.component.props.query.bbox)
@@ -889,7 +910,6 @@ var MapData = React.createClass({
             return;
         }
 
-        console.log('here', this.data.lsoas.length, props.query.oa);
         // Only re-colour the polygons if something that would cause their colour to change has changed
         if ((this.data.budget !== budget || this.data.priority !== priority_order.join('|') || this.data.disabled_themes !== disabled_themes.join('|') || this.data.oa !== props.query.oa) && this.data.summary) {
             if (config.debug) {
@@ -909,7 +929,7 @@ var MapData = React.createClass({
                 for (var i=1; i<8; i++) {
                     this.data.boundary_scores.push(all[parseInt(i*boundary_number)])
                 }
-                console.info(this.data.boundary_scores);
+                console.info('Overall boundary scores:', this.data.boundary_scores);
             }
             for (var i=0; i<this.data.lsoas.length; i++) {
                 this.set_colors(
@@ -1366,8 +1386,10 @@ var Main = React.createClass({
     },
 
     componentDidUpdate(prevProps, prevState) {
+        if (config.debug) {
             console.log('Updated main', this.props.modal, this.props.query.oa, MyCity.oa);
-        if (this.props.modal && (MyCity.oa !== this.props.query.oa)) {
+        }
+        if (this.props.summary && this.props.modal && (MyCity.oa !== this.props.query.oa)) {
             MyCity.oa = this.props.query.oa;
             MyCity.lsoa = this.props.query.lsoa;
             MyCity.plugin.onClickOA(this.props.query.oa, this.props.query.lsoa);
@@ -1376,7 +1398,7 @@ var Main = React.createClass({
                 this.context.router.transitionTo('map', this.props.params, query);
                 MyCity.oa = undefined;
             }.bind(this);
-            PopupDataFetcher.getData(this.props.query.oa);
+            PopupDataFetcher.getData(this.props.query.oa, this.props.summary, this.props.theme_boundaries);
         }
     },
 
@@ -1396,6 +1418,7 @@ var Main = React.createClass({
                 oa={this.props.query.oa}
                 lsoa={this.props.query.lsoa}
                 boundary_scores={this.props.boundary_scores}
+                theme_boundaries={this.props.theme_boundaries}
             />
         );
         return (
@@ -1505,7 +1528,7 @@ var Chart = React.createClass({
     }
 });
 
-
+// XXX Maybe this shouldn't be a component
 var PopupDataFetcher = {
     data: {
         oa: null,
@@ -1517,7 +1540,7 @@ var PopupDataFetcher = {
         rent: null,
         geo: null
     },
-    getData: function(oa) {
+    getData: function(oa, summary, theme_boundaries) {
         resolveHash(
             [
                 getRentFromOA(oa).then(
@@ -1559,6 +1582,16 @@ var PopupDataFetcher = {
         ).then(
             function(result) {
                 this.data.oa = oa;
+                this.data.summary = summary[oa];
+                this.data.scores = {}
+                var themes = ['schools', 'green_space', 'safety', 'transport'];
+                for (var t=0; t<themes.length; t++) {
+                    var theme = themes[t];
+                    this.data.scores[theme] = display_score(
+                        theme_boundaries[theme],
+                        summary[oa][theme]
+                    )
+                }
                 MyCity.plugin.onReceiveData(this.data);
                 //this.forceUpdate();
             }.bind(this)

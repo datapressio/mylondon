@@ -7,59 +7,27 @@ window.MyCity = {
             popup.style("right","0%");
         },
         onReceiveData: function(data) {
-            var summaryData;
-            if (window.summary!=undefined && window.summary[data.oa]) {
-              summaryData = window.summary[data.oa];
-            }
-            else {
-              summaryData = {
-                "transport"   : -1,
-                "schools"     : -1,
-                "green_space" : -1,
-                "safety"      : -1,
-              };
-            }
-            // console.log("got summary data",summaryData);
-            function scoreWord(val) {
-              // TODO what are the actual thresholds?
-              if (val<0)    { return "Unknown"; }
-              if (val<0.4)  { return "Below Average"; }
-              if (val<0.6)  { return "Average"; }
-              if (val<0.8)  { return "Above Average"; }
-              if (val<=1.0) { return "Excellent"; }
-              return val;
-            }
-            function scoreNumber(val) {
-              // TODO what are the actual thresholds?
-              if (val<0)    { return 0; }
-              if (val<0.4)  { return 1; }
-              if (val<0.6)  { return 2; }
-              if (val<0.8)  { return 3; }
-              if (val<=1.0) { return 4; }
-              return 0;
-            }
-
-
+            console.info('Data for popup:', data);
             // ====
             popup.select('.box-rent h3').html("<span class=\"color\">"+data.postcode+":</span> Cost Per Month");
             var graph_rent = popup.select('.box-rent .graph');
             graph_rent.html( "<pre>"+JSON.stringify(data.rent)+"</pre>" );
             // ====
-            popup.select('.box-schools h3').html("Overall: <span class=\"color\">"+scoreWord(summaryData.schools)+"</span>");
+            popup.select('.box-schools h3').html("Overall: <span class=\"color\">"+data.scores.schools+"</span>");
             var graph_schools = popup.select('.box-schools .graph');
             graph_schools.html( "<pre>"+JSON.stringify(data.schools)+"</pre>" );
             // ====
-            popup.select('.box-transport h3').html("Overall: <span class=\"color\">"+scoreWord(summaryData.transport)+"</span>");
+            popup.select('.box-transport h3').html("Overall: <span class=\"color\">"+data.scores.transport+"</span>");
             var graph_transport = popup.select('.box-transport .graph');
             graph_transport.html( "<pre>Zone "+JSON.stringify(data.fareZone)+"</pre>" +
                            "<pre>"+JSON.stringify(data.timeToBank)+"</pre>");
             // ====
-            popup.select('.box-greenspace h3').html("Overall: <span class=\"color\">"+scoreWord(summaryData.green_space)+"</span>");
+            popup.select('.box-greenspace h3').html("Overall: <span class=\"color\">"+data.scores.green_space+"</span>");
             var graph_greenspace = popup.select('.box-greenspace .graph');
             graph_greenspace.html( "<pre>Score: Unknown</pre>");
             // ====
-            popup.select('.box-safety h3').html("Overall: <span class=\"color\">"+scoreWord(summaryData.safety)+"</span>");
-            var safety_n = scoreNumber(summaryData.safety);
+            popup.select('.box-safety h3').html("Overall: <span class=\"color\">"+data.scores.safety+"</span>");
+            var safety_n = data.summary.safety;
             console.log(safety_n);
             safety_n = 1+Math.floor(Math.random()*4);
 
@@ -139,6 +107,3 @@ popup.html('\
     </div>\
   </div>\
 ');
-
-
-
