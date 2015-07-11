@@ -24,6 +24,10 @@ Cheating on:
 
 */
 
+var api_server = "http://api.datapress.io";
+if (true) {
+  api_server="http://datastore3";
+}
 var resource_ids = {
   "bbox"                                   : "d62ad9f3-4a5d-410b-993a-134c57ce52ee",
   "modelled_OA_rents"                      : "c16db584-f212-439f-b735-507fe6c49955",
@@ -118,7 +122,7 @@ var display_score = function(boundary_scores, value) {
 
 var getTimeToBankFromOA = function(oa) {
     return new Promise(function (resolve, reject) {
-        request.get('http://api.datapress.io/api/3/action/datastore_search')
+        request.get(api_server+'/api/3/action/datastore_search')
         .query({
             resource_id: resource_ids['MyLondon_traveltime_to_Bank_station_OA'],
             filters: JSON.stringify({OA11CD: oa})
@@ -149,7 +153,7 @@ var getTimeToBankFromOA = function(oa) {
 
 var getPostcodeFromOA = function(oa) {
     return new Promise(function (resolve, reject) {
-        request.get('http://api.datapress.io/api/3/action/datastore_search')
+        request.get(api_server+'/api/3/action/datastore_search')
         .query({
             resource_id: resource_ids['MyLondon_postcode_OA'],
             filters: JSON.stringify({OA11CD: oa})
@@ -179,7 +183,7 @@ var getPostcodeFromOA = function(oa) {
 
 var getAreaDescriptionFromOA = function(oa) {
     return new Promise(function (resolve, reject) {
-        request.get('http://api.datapress.io/api/3/action/datastore_search')
+        request.get(api_server+'/api/3/action/datastore_search')
         .query({
             resource_id: resource_ids['MyLondon_LOAC_area_description_text_v3'],
             filters: JSON.stringify({OA11CD: oa})
@@ -208,7 +212,7 @@ var getAreaDescriptionFromOA = function(oa) {
 
 var getGeospatialFromOA = function(oa) {
     return new Promise(function (resolve, reject) {
-        request.get('http://api.datapress.io/api/3/action/datastore_search')
+        request.get(api_server+'/api/3/action/datastore_search')
         .query({
             resource_id: resource_ids['bbox'],
             filters: JSON.stringify({oa: oa})
@@ -238,7 +242,7 @@ var getGeospatialFromOA = function(oa) {
 
 var getRentFromOA = function(oa) {
     return new Promise(function (resolve, reject) {
-        request.get('http://api.datapress.io/api/3/action/datastore_search')
+        request.get(api_server+'/api/3/action/datastore_search')
         .query({
             resource_id: resource_ids['modelled_OA_rents'],
             filters: JSON.stringify({OA11CD: oa})
@@ -267,7 +271,7 @@ var getRentFromOA = function(oa) {
 
 var getFareZoneFromOA = function(oa) {
     return new Promise(function (resolve, reject) {
-        request.get('http://api.datapress.io/api/3/action/datastore_search')
+        request.get(api_server+'/api/3/action/datastore_search')
         .query({
             resource_id: resource_ids['MyLondon_fare_zone_OA'],
             filters: JSON.stringify({OA11CD: oa})
@@ -296,7 +300,7 @@ var getFareZoneFromOA = function(oa) {
 
 var getSchoolsFromOA = function(oa) {
     return new Promise(function (resolve, reject) {
-        request.get('http://api.datapress.io/api/3/action/datastore_search')
+        request.get(api_server+'/api/3/action/datastore_search')
         .query({
             resource_id: resource_ids['MyLondonSchoolsCatchmentv2'],
             filters: JSON.stringify({OA11CD: oa})

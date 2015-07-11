@@ -114,6 +114,7 @@ h1,h2,h3,h4{
   margin: 0 auto;
   width: 240px;
   min-height: 200px;
+  position: relative;
 }
 .box.box-rent        h2 { color: #95be32; }
 .box.box-schools     h2 { color: #d96a63; }
@@ -128,6 +129,104 @@ h1,h2,h3,h4{
 .box.box-greenspace  h3 .color { color: #96c032; }
 .box.box-safety      h3 .color { color: #5da5a7; }
 .box.box-information h3 .color { color: #e6ddc8; }
+/* ======= */
+.box-rent .graph {
+  position: relative;
+}
+.box-rent .graph .rent-column {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 49px;
+}
+
+.box-rent .graph .rent-column-1 > * { background-color: #5da173; color: #5da173; }
+.box-rent .graph .rent-column-2 > * { background-color: #5da7a8; color: #5da7a8; }
+.box-rent .graph .rent-column-3 > * { background-color: #eed545; color: #eed545; }
+.box-rent .graph .rent-column-4 > * { background-color: #e8dec8; color: #e8dec8; }
+
+.box-rent .graph .rent-column .title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 30px;
+  line-height: 30px;
+  font-family: monospace;
+  text-align: center;
+  background-color: transparent !important;
+  bottom: 0;
+  transition: bottom 400ms ease 0s;
+}
+.box-rent .graph .rent-column .top {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 30px;
+  height: 50px;
+  transition: height 400ms ease 0s;
+}
+.box-rent .graph .rent-column .top .window {
+  background: #333333;
+  position: absolute;
+  width: 15px;
+  height: 14px;
+}
+.box-rent .graph .rent-column .top .window.tl { top: 6px; left: 6px; }
+.box-rent .graph .rent-column .top .window.tr { top: 6px; left: 28px; }
+.box-rent .graph .rent-column .top .window.bl { top: 26px; left: 6px; }
+.box-rent .graph .rent-column .top .window.br { top: 26px; left: 28px; }
+.box-rent .graph .rent-column .top .text {
+  position: absolute;
+  left: 0; 
+  right: 0;
+  bottom: 0;
+  text-align: center;
+  height: 30px;
+  line-height: 30px;
+  vertical-align: middle;
+  color: #fff;
+  font-family:"p22_johnston_undergroundRg" !important;
+  font-weight:900;
+  font-size: 20px;
+}
+
+.box-rent .graph .rent-column-1 { left: 0px; }
+.box-rent .graph .rent-column-2 { left: 62px; }
+.box-rent .graph .rent-column-3 { left: 124px; }
+.box-rent .graph .rent-column-4 { left: 186px; }
+
+
+/* ======= */
+.tree-graph {
+  width: 166px;
+  height: 140px;
+  position: relative;
+  margin: 0 auto;
+}
+.tree-graph .tree {
+  position: absolute;
+  top: 0;
+  height: 140px;
+}
+.tree-graph .tree1 { left: 0px; }
+.tree-graph .tree2 { left: 20px; }
+.tree-graph .tree3 { left: 40px; }
+.tree-graph .tree4 { left: 60px; }
+.tree-bar-graph {
+  position: absolute;
+  bottom: 0;
+  left: 10px;
+  right: 10px;
+  height: 15px;
+  background: rgba(255,0,255,0.5);
+}
+.tree-bar-graph .cell {
+  float: left;
+  width: 4%;
+  margin-left: 1%;
+  height: 15px;
+}
+
 /* ======= */
 .safety-graph {
   width: 250px;
