@@ -1,7 +1,3 @@
-body {
-
-}
-
 .leaflet-zoom-animated g path:hover { fill: #fff; }
 .slider.slider-horizontal {
     width: 100%;
@@ -13,25 +9,102 @@ body {
     margin-top: 4px;
 }
 .settings {
-    background: #fff;
+    font-family:"Johnston";
+    background: rgba(0,0,0,0.80);
+    color: #fff;
     padding: 18px 18px 18px 18px;
-    -webkit-box-shadow: rgba(0, 0, 0, 0.65098) 0px 1px 5px 0px;
-    border-bottom-left-radius: 4px;
-    border-bottom-right-radius: 4px;
-    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;
-    bottom: 10px;
-    box-shadow: rgba(0, 0, 0, 0.65098) 0px 1px 5px 0px;
     display: block;
     left: 10px;
     line-height: normal;
-    overflow-x: hidden;
-    overflow-y: hidden;
+    overflow: hidden;
     position: fixed;
     top: 10px;
     width: 295px;
     z-index: 10;
 }
+.settings h1 {
+  text-align: center;
+  color: #5ca6a8;
+  margin: 0 auto;
+}
+.settings h1.my {
+}
+.settings h1.london {
+  padding-bottom: 3px;
+  margin-bottom: 25px;
+  border-bottom: 4px solid #5ca6a8;
+}
+.h1-line {
+  position: absolute;
+  top: 35px;
+  width: 88px;
+  height: 4px;
+  background: #5ca6a8;
+}
+.h1-line.left {
+  left: 18px;
+}
+.h1-line.right {
+  right: 18px;
+}
+.settings input[type="search"] {
+  opacity: 0.4;
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  border-radius: 0;
+}
+.settings input[type="search"]:focus,
+.settings input[type="search"]:active {
+  opacity: 1.0;
+}
+
+.settings .budget-text {
+  color: #96bf31;
+  margin-bottom: 8px;
+}
+
+.slider-handle {
+  -webkit-border-radius: 0 !important;
+  -moz-border-radius: 0 !important;
+  border-radius: 0 !important;
+  background: url("../http/art/sliderhandle.png");
+  width: 25px;
+  height: 29px;
+  margin-top: -14px !important;
+  margin-left: -14px !important;
+  filter: none;
+  -webkit-box-shadow: none !important;
+  box-shadow: none !important;
+}
+.slider {
+  margin-bottom: 35px;
+}
+.slider-track {
+  background: none !important;
+}
+.slider-track-high {
+  border-top: none !important;
+  border-bottom: 4px solid #5da7a8;
+}
+.slider-selection {
+  background: none !important;
+  border-bottom: none !important;
+  border-top: 4px solid #96bf31;
+}
+.card {
+  padding: 8px 10px;
+  color: #4d4d4d;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+.card img {
+  float: right;
+}
+.card input[type="checkbox"] {
+  margin-right: 10px;
+}
+
+
 table td.key {
     width: 200px;
     font-weight: bold;

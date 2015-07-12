@@ -1,7 +1,14 @@
-@import url("/http/webfontkit/stylesheet.css");
+@import url("http://fast.fonts.net/t/1.css?apiType=css&projectid=ecd95080-3725-4003-bc66-83b456471d3b");
+@font-face{
+  font-family:"Johnston";
+  src:url("http/font-kit/Fonts/002e95c1-f0e9-4a36-ba9f-d8f113066a1a.eot?#iefix");
+  src:url("http/font-kit/Fonts/002e95c1-f0e9-4a36-ba9f-d8f113066a1a.eot?#iefix") format("eot"),url("http/font-kit/Fonts/e5217c01-a37f-4589-8b00-7ebab2518ea4.woff2") format("woff2"),url("http/font-kit/Fonts/7e8e7e32-e1a6-4e18-877a-3e6aba42566d.woff") format("woff"),url("http/font-kit/Fonts/927e1624-010e-4d3d-a033-94e45d7217ba.ttf") format("truetype"),url("http/font-kit/Fonts/833386a5-1922-48f1-a3d8-63d02ed43d57.svg#833386a5-1922-48f1-a3d8-63d02ed43d57") format("svg");
+}
+
+#mycity-popup,
+.johnston,
 h1,h2,h3,h4{ 
-  font-family:"p22_johnston_undergroundRg" !important;
-  font-weight:900;
+  font-family:"Johnston";
 }
 
 .main-logo  {
@@ -72,10 +79,10 @@ h1,h2,h3,h4{
 #mycity-popup {
     position: fixed;
     z-index: 100;
-    width: 45%;
+    width: 100%;
     height: 100%;
     top: 0px;
-    right: -45%;
+    right: 0;
     background: rgba(0,0,0,0.80);
     color: #fff;
     overflow: scroll;
@@ -84,6 +91,19 @@ h1,h2,h3,h4{
     -webkit-transition: right 250ms ease-in-out;
     -moz-transition: right 250ms ease-in-out;
     transition: right 250ms ease-in-out;
+}
+#mycity-popup.offscreen { right: -100%; }
+@media(min-width: 450px) {
+  #mycity-popup           { width: 75%; }
+  #mycity-popup.offscreen { right: -75%; }
+}
+@media(min-width: 575px) {
+  #mycity-popup           { width: 60%; }
+  #mycity-popup.offscreen { right: -60%; }
+}
+@media(min-width: 768px) {
+  #mycity-popup           { width: 45%; }
+  #mycity-popup.offscreen { right: -45%; }
 }
 .close-button:hover {
   opacity: 1;
@@ -96,6 +116,23 @@ h1,h2,h3,h4{
   border-bottom: 3px solid #5da6a8;
   min-height: 20px;
   padding: 14px 0 ;
+  position: relative;
+}
+.box .loading {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 220px;
+  height: 80px;
+  line-height: 80px;
+  margin-left: -110px;
+  margin-top: -40px;
+  background: url("http://cdnjs.cloudflare.com/ajax/libs/galleriffic/2.0.1/css/loader.gif") 13% 50% #fff no-repeat;
+  border-radius: 50px;
+  padding-left: 85px;
+  color: #000;
+  vertical-align: middle;
+  opacity: 0;
 }
 .box h2 {
   text-align: center;
@@ -113,7 +150,7 @@ h1,h2,h3,h4{
 .box .graph {
   margin: 0 auto;
   width: 240px;
-  min-height: 200px;
+  min-height: 240px;
   position: relative;
 }
 .box.box-rent        h2 { color: #95be32; }
@@ -121,7 +158,9 @@ h1,h2,h3,h4{
 .box.box-transport   h2 { color: #edd444; }
 .box.box-greenspace  h2 { color: #96c032; }
 .box.box-safety      h2 { color: #5da5a7; }
-.box.box-information h2 { color: #e6ddc8; }
+.box.box-info1       h2 { color: #e6ddc8; }
+.box.box-info2       h2 { color: #d96a63; }
+.box.box-info3       h2 { color: #95be32; }
 /* ======= */
 .box.box-rent        h3 .color { color: #95be32; }
 .box.box-schools     h3 .color { color: #d96a63; }
@@ -151,19 +190,18 @@ h1,h2,h3,h4{
   right: 0;
   height: 30px;
   line-height: 30px;
-  font-family: monospace;
   text-align: center;
   background-color: transparent !important;
   bottom: 0;
-  transition: bottom 400ms ease 0s;
+  transition: bottom 750ms ease 0s;
 }
 .box-rent .graph .rent-column .top {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 30px;
+  bottom: 0px;
   height: 50px;
-  transition: height 400ms ease 0s;
+  transition: height 750ms ease 0s;
 }
 .box-rent .graph .rent-column .top .window {
   background: #333333;
@@ -185,7 +223,6 @@ h1,h2,h3,h4{
   line-height: 30px;
   vertical-align: middle;
   color: #fff;
-  font-family:"p22_johnston_undergroundRg" !important;
   font-weight:900;
   font-size: 20px;
 }
@@ -195,69 +232,165 @@ h1,h2,h3,h4{
 .box-rent .graph .rent-column-3 { left: 124px; }
 .box-rent .graph .rent-column-4 { left: 186px; }
 
-
-/* ======= */
-.tree-graph {
-  width: 166px;
-  height: 140px;
+.box-schools .graph {
   position: relative;
-  margin: 0 auto;
 }
-.tree-graph .tree {
+.box-schools .graph .left {
   position: absolute;
   top: 0;
-  height: 140px;
-}
-.tree-graph .tree1 { left: 0px; }
-.tree-graph .tree2 { left: 20px; }
-.tree-graph .tree3 { left: 40px; }
-.tree-graph .tree4 { left: 60px; }
-.tree-bar-graph {
-  position: absolute;
-  bottom: 0;
-  left: 10px;
-  right: 10px;
-  height: 15px;
-  background: rgba(255,0,255,0.5);
-}
-.tree-bar-graph .cell {
-  float: left;
-  width: 4%;
-  margin-left: 1%;
-  height: 15px;
-}
-
-/* ======= */
-.safety-graph {
-  width: 250px;
-  height: 200px;
-  position: relative;
-}
-.safety-graph > div {
-  position: absolute;
   left: 0;
+  width: 120px;
+}
+.box-schools .graph .right {
+  position: absolute;
   top: 0;
+  right: 0;
+  width: 120px;
+}
+
+.box-schools .graph .text {
+  font-size: 12px;
+  padding: 5px;
+  height: 125px;
+}
+.box-schools .graph .text table th {
+  font-weight: normal !important;
+  padding-bottom: 2px;
+}
+.box-schools .graph .text table td {
+  max-width: 90px;
+  vertical-align: top;
+  line-height: 12px;
+  padding-top: 4px;
+}
+.box-schools .graph .text table td div {
+  max-height: 24px;
   overflow: hidden;
-  width: 100%;
-  transition: width 250ms;
-}
-.safety-graph .noclip {
-  opacity: 0.3;
-}
-.safety-graph .clip {
-  border-right: 1px solid transparent;
-}
-.safety-graph > div > img {
-  width: 250px;
 }
 
 /* ======= */
-.box.box-information .graph strong {
-  display: block;
-  margin-bottom: 3px;
+.box-transport h4 {
+  text-align: center;
+  font-size: 14px;
+  line-height: 14px;
+  margin: 20px 0 0 0;
 }
-.box.box-information .graph blockquote {
-  font-size: 12px;
+.box-transport .graph {
+  min-height: 200px;
+}
+.box-transport .graph .cell {
+  position: relative;
+  width: 120px;
+  height: 100px;
+  float: left;
+}
+.box-transport .graph .cell img {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  top: 10px;
+  left: 0px;
+}
+.box-transport .graph .cell .minutes,
+.box-transport .graph .cell .word-minutes,
+.box-transport .graph .cell .miles,
+.box-transport .graph .cell .word-miles {
+  position: absolute;
+  right: 0px;
+  width: 36px;
+}
+.box-transport .graph .cell .minutes      { top: 15px; font-size: 19px; }
+.box-transport .graph .cell .word-minutes { top: 35px; font-size: 10px; }
+.box-transport .graph .cell .miles        { top: 53px; font-size: 19px; }
+.box-transport .graph .cell .word-miles   { top: 73px; font-size: 10px; }
+
+/* ======= */
+.box-greenspace .graph {
+  position: relative;
+  text-align: center;
+}
+.box-greenspace .graph .trees {
+  margin-top: 45px;
+  width: 170px;
+}
+.box-greenspace .graph .green-space-meter {
+  position: absolute;
+  bottom: 30px;
+  left: 0px;
+  right: 0;
+  height: 20px;
+  overflow: hidden;
+}
+.box-greenspace .graph .green-space-meter .cell {
+  margin: 0 1px;
+  height: 20px;
+  width: 6px;
+  float: left;
+}
+
+/* ======= */
+.box-safety .graph {
+  position: relative;
+  min-height: 200px;
+}
+.box-safety .graph img {
+  position: absolute;
+  width: 220px;
+  left: 50%;
+  margin-left: -110px;
+  margin-top: 40px;
+}
+.box-safety .graph svg {
+  position: absolute;
+  left: 9px;
+  top: 39px;
+  z-index: 2;
+}
+
+/* ======= */
+.box.box-info1 .graph {
+  min-height: 200px;
+}
+.box.box-info1 table {
+  width: 180px;
+  margin: 10px auto;
+}
+.box.box-info1 table td.left {
+  text-align: right;
+  border-right: 1px solid #5da6a8;
+  border-bottom: 1px solid #5da6a8;
+  padding: 4px 7px;
+  min-width:100px;
+  white-space: nowrap;
+}
+.box.box-info1 table td.right {
+  border-bottom: 1px solid #5da6a8;
+  padding: 4px 7px;
+  min-width:120px;
+  white-space: nowrap;
+}
+.box.box-info1 table tr:last-child td.left,
+.box.box-info1 table tr:last-child td.right {
+  border-bottom: none !important;
+}
+
+
+.box-info2 .graph,
+.box-info3 .graph { 
+  quotes: '\201c' '\201d';
+  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-size: 12px; 
+  padding-left: 5px;
+  text-indent: -5px;
+}
+
+.box-info2 .graph:before,
+.box-info3 .graph:before { 
+  content: open-quote; 
+}
+.box-info2 .graph:after,
+.box-info3 .graph:after  { 
+  content: close-quote; 
 }
 
 
@@ -277,3 +410,38 @@ h1,h2,h3,h4{
     border-right: 3px solid #5da6a8;
   }
 }
+
+.help {
+  position: fixed;
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  padding: 20px;
+  z-index: 10;
+  width: 270px;
+}
+.help .arrow {
+  position: absolute;
+  font-size: 80px;
+  color: #fff;
+  text-shadow: 0 0 3px #000;
+  z-index: -1;
+}
+
+
+.help1 {
+  left: 240px;
+  top: 350px;
+}
+.help2 {
+  left: 340px;
+  top: 300px;
+}
+.help1 .arrow {
+  top: -70px;
+  left: -30px;
+}
+.help2 .arrow {
+  top: -70px;
+  right: -30px;
+}
+

@@ -25,7 +25,7 @@ Cheating on:
 */
 
 var api_server = "http://api.datapress.io";
-if (true) {
+if (false) {
   api_server="http://datastore3";
 }
 var resource_ids = {
@@ -1322,10 +1322,6 @@ var Panel = React.createClass({
                         max={1000}
                         step={10}
                     />
-                    <br />
-
-                    <p>What is most important to you when moving to a new area?</p>
-                    <p><em>(tip: drag the boxes up &amp; down the list)</em></p>
 
                     <Priorities
                         cards={this.props.cards}
@@ -1363,10 +1359,12 @@ var Panel = React.createClass({
             <div>
                {loading}
                <div className={className} style={{
-                   height: 400, //window.innerHeight - 250,
+                   height: 440, //window.innerHeight - 250,
                }}>
-                   <h2 style={{marginBottom: '19px', marginTop: '0px'}}><img src="http/final-800.png" style={{width: '100%'}}/></h2>
-
+                   <div className="h1-line left"></div>
+                   <h1 className="my">MY</h1>
+                   <div className="h1-line right"></div>
+                   <h1 className="london">LONDON</h1>
                    <form onSubmit={this.onSearch}>
                        <Input ref="postcode" type='search' placeholder='Postcode' />
                    </form>

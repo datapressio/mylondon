@@ -21,13 +21,7 @@ const dropTarget = {
     }
 };
 
-const style = {
-    border: '1px dashed gray',
-    backgroundColor: 'white',
-    padding: '3px',
-    marginTop: '2px',
-    marginBttom: '2px',
-};
+const style = {};
 
 const Card = React.createClass({
     mixins: [DragDropMixin],
@@ -94,20 +88,29 @@ const Card = React.createClass({
         const { text, value } = this.props;
         const { isDragging } = this.getDragState(ItemTypes.CARD);
         const opacity = isDragging ? 0 : 1;
-        var newStyles = {opacity: opacity}
+        var backgrounds = {
+          1: '#eed645',
+          2: '#96bf31',
+          3: '#5da7a8',
+          4: '#db6b66',
+        };
+        var newStyles = {
+          opacity: opacity,
+          background: backgrounds[this.props.id],
+        }
         if (this.props.disabled) {
-            newStyles['background'] = '#ccc';
+            newStyles['background'] = '#333';
         }
         var s = objectAssign({}, style, newStyles);
 
         var textStyles = {
-            background: 'none',
-            border: 0,
+            // background: 'none',
+            // border: 0,
             cursor: 'move',
-            width: '204px', 
-            textAlign: 'left',
-            outline: 'none',
-            display: 'inline-block',
+            // width: '204px', 
+            // textAlign: 'left',
+            // outline: 'none',
+            // display: 'inline-block',
         }
         var img = (<span style={{width: 20, display: 'inline-block'}}></span>);
         if (this.props.disabled) {
@@ -116,12 +119,11 @@ const Card = React.createClass({
             img = (<img src={this.props.icon} style={{width: '20px', cursor: 'move'}}/>)
         }
         return (
-            <div {...this.dragSourceFor(ItemTypes.CARD)}
+            <div className="card"
+                 {...this.dragSourceFor(ItemTypes.CARD)}
                  {...this.dropTargetFor(ItemTypes.CARD)}
                  style={s}
             >
-                {img} &nbsp;
-                <span style={textStyles}>{text}</span> 
                 <input
                     type="checkbox"
                     name={this.props.name}
@@ -129,6 +131,8 @@ const Card = React.createClass({
                     ref={this.props.name}
                     onChange={this.handleChange}
                 />
+                <span style={textStyles}>{text}</span> 
+                {img} &nbsp;
             </div>
         );
     }
