@@ -77,7 +77,7 @@ function scoreForWord(word) {
 
 window.MyCity = {
 
-    schoolGraphCreate(parent_node) {
+    schoolGraphCreate: function(parent_node) {
       var width = 120, 
           height = 120;
       var svg = parent_node.append("svg")
@@ -95,7 +95,7 @@ window.MyCity = {
       return svg;
     },
 
-    schoolGraphUpdate(data) {
+    schoolGraphUpdate: function(data) {
       popup.select('.box-schools h3').html("Overall: <span class=\"color\">"+data.scores.schools+"</span>");
       function render_school_text( title, scores ) {
         out = '<table><thead><tr><th colspan="2">'+title+'</th></tr></thead>';
@@ -308,7 +308,7 @@ window.MyCity = {
 
 
 
-    safetyGraphCreate(parent_node) {
+    safetyGraphCreate: function(parent_node) {
       var width = 222, 
           height = 222;
       var svg = parent_node.append("svg")
@@ -319,7 +319,7 @@ window.MyCity = {
       return svg;
     },
 
-    safetyGraphUpdate(data) {
+    safetyGraphUpdate: function(data) {
       popup.select('.box-safety h3').html("Overall: <span class=\"color\">"+data.scores.safety+"</span>");
       var arc = d3.svg.arc()
         .outerRadius( 111 )
