@@ -85,7 +85,7 @@ var throttle = require('./components/throttle');
 
 // Our Components
 var Map = require('./components/map/Map');
-var Priorities = require('./components/drag/Priorities');
+// var Priorities = require('./components/drag/Priorities');
 var BudgetSlider = require('./components/budgetslider/BudgetSlider');
 
 require('./index.css')
@@ -1276,8 +1276,245 @@ var MapData = React.createClass({
 });
 
 
-var Panel = React.createClass({
 
+var Sortable = require('sortablejs');
+// var SortableMixin = require('sortablejs/react-sortable-mixin.js');
+
+//var Priorities1 = React.createClass({
+//    mixins: [SortableMixin],
+//
+//    getInitialState: function() {
+//        return {
+//            items: ['One', 'Two', 'Three', 'Four']
+//        };
+//    },
+//
+//    // handleSort: function (evt) {
+//    //     alert('Sorted');
+//    // },
+//
+//    render: function() {
+//        return <ul>{
+//            this.state.items.map(function (text) {
+//                return <li><div style={{height: "40px", color: "#ccc"}}>{text}</div></li>
+//            })
+//        }</ul>
+//    }
+//});
+//
+//
+//// React.render(<SortableList />, document.body);
+
+
+
+var Priorities = React.createClass({
+    render() {
+        return (
+            <div>
+                <Container
+                    cards={this.props.cards}
+                    disabled_themes={this.props.disabled_themes}
+                    params={this.props.params}
+                    query={this.props.query}
+                />
+            </div>
+        );
+    }
+});
+
+var move = function (arr, old_index, new_index) {
+    if (new_index >= arr.length) {
+        var k = new_index - this.length;
+        while ((k--) + 1) {
+            arr.push(undefined);
+        }
+    }
+    return this; // for testing purposes
+};
+
+
+var Container = React.createClass({
+    contextTypes: {
+        router: React.PropTypes.func
+    },
+
+    componentWillUnmount() {
+        console.log('Unmounting...', this.sortable);
+        this.sortable.destroy();
+        this.sortable = null;
+    },
+
+    componentDidUpdate() {
+        var curPriority = []
+        this.props.cards.map(card => {
+            curPriority.push(''+card.id);
+        })
+        console.log(curPriority)
+        this.sortable.sort(curPriority);
+        // console.log('Re-creating sortable... ');
+        // var list = this.getDOMNode();
+        // this.sortable = this.makeSortable(list);
+    },
+
+    componentDidMount() {
+        console.log('First creation of sortable...');
+        var list = this.getDOMNode();
+        this.sortable = this.makeSortable(list);
+    },
+
+    makeSortable(list) {
+        var sortable = Sortable.create(list, {
+            sort: true,
+            handle: ".drag-handle",
+            ghostClass: "dragging",
+            onEnd: function (e){
+                var priority = []
+                for (var i=0; i<this.props.cards.length; i++) {
+                    priority.push(this.props.cards[i].id)
+                }
+                var moved = priority[e.oldIndex]
+                console.log('Need to move:', e.oldIndex, e.newIndex, priority.join(','))
+                priority.splice(e.newIndex, 0, priority.splice(e.oldIndex, 1)[0]);
+                console.log('After:', priority.join(','))
+                console.info('New priority order:', priority.join(','));
+                var query = objectAssign({}, this.props.query, {priority: priority.join(',')});
+                //console.log('Destroy sortable...')
+                //this.sortable.destroy();
+                this.context.router.replaceWith('map', this.props.params, query);
+            }.bind(this)
+        });
+        return sortable;
+    },
+
+    shouldComponentUpdate(nextProps, nextState) {
+        console.log('Checking for update...');
+        var curPriority = []
+        this.props.cards.map(card => {
+            curPriority.push(card.id);
+        })
+	var nextPriority = []
+        nextProps.cards.map(card => {
+            nextPriority.push(card.id);
+        })
+        if (nextPriority.join(',') !== curPriority.join(',') || nextProps.disabled_themes.join(',') !== this.props.disabled_themes.join(',')) {
+            console.log('Need to update...', nextProps.cards, this.props.cards);
+            // if (this.sortable) {
+            //     console.log('Destroying sortable', this.sortable);
+            //     this.sortable.destroy();
+            //     this.sortable = null;
+            //     console.log('Destroyed sortable', this.sortable);
+            // }
+            return true;
+        }
+        return false;
+    },
+
+    render() {
+        console.log('Rendering priorities ...');
+        return (
+                <ul id="priorities" className="block__list block__list_words">
+                    {this.props.cards.map(card => {
+                        console.log('Card '+card.id);
+                        var disabled = false;
+                        if (this.props.disabled_themes.indexOf(card.id) !== -1) {
+                            var disabled = true;
+                        }
+                        // console.log('zzzzzzzzzzzzzzzzzzzz', this.props.disabled_themes, card.id, disabled)
+                        return (
+                            <Card key={card.id}
+                                id={card.id}
+                                name={card.id}
+                                text={card.text}
+                                value={card.value}
+                                icon={card.icon}
+                                disabled={disabled}
+                                disabled_themes={this.props.disabled_themes}
+                                params={this.props.params}
+                                query={this.props.query}
+                            />
+                        );
+                    })}
+                </ul>
+        );
+    }
+});
+
+
+var Card = React.createClass({
+    contextTypes: {
+        router: React.PropTypes.func
+    },
+
+    handleChange: function(event) {
+        // console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', this.props.disabled, this.props.id);
+        if (!this.props.disabled) {
+            var disabled_themes = this.props.disabled_themes.slice()
+            disabled_themes.push(this.props.id)
+        } else {
+            var disabled_themes = []
+            for (var i=0; i<this.props.disabled_themes.length; i++) {
+                if (this.props.disabled_themes[i] !== this.props.id) {
+                    disabled_themes.push(this.props.disabled_themes[i]);
+                }
+            }
+        }
+        var query = objectAssign({}, this.props.query, {disabled_themes: disabled_themes.join(',')});
+        this.context.router.transitionTo('map', this.props.params, query);
+    },
+
+    render() {
+        var opacity = 1;
+        var backgrounds = {
+          1: '#eed645',
+          2: '#96bf31',
+          3: '#5da7a8',
+          4: '#db6b66',
+        };
+        var newStyles = {
+          opacity: opacity,
+          background: backgrounds[this.props.id],
+        }
+        if (this.props.disabled) {
+            newStyles['background'] = '#333';
+        }
+        var textStyles = {
+            // background: 'none',
+            // border: 0,
+            cursor: 'move',
+            // width: '204px',
+            // textAlign: 'left',
+            // outline: 'none',
+            // display: 'inline-block',
+        }
+        var img = (<span style={{width: 20, display: 'inline-block'}}></span>);
+        if (this.props.disabled) {
+            textStyles['textDecoration'] = 'line-through';
+        } else {
+            img = (<img src={this.props.icon} style={{width: '20px', cursor: 'move'}}/>)
+        }
+        return (
+            <li data-id={this.props.id}>
+                <div style={newStyles} className="card">
+                    <input
+                        type="checkbox"
+                        name={this.props.name}
+                        checked={!this.props.disabled}
+                        ref={this.props.name}
+                        onChange={this.handleChange}
+                        style={{position: "relative", top: "0px"}}
+                    />
+                    <span className="drag-handle">
+                        <span style={textStyles}>{this.props.text}</span>
+                        {img}
+                    </span>
+                </div>
+            </li>
+        );
+    }
+});
+
+
+var Panel = React.createClass({
     onSearch(e) {
         e.preventDefault();
         var postcode = this.refs.postcode.getInputDOMNode().value;
@@ -1346,7 +1583,6 @@ var Panel = React.createClass({
                    <form onSubmit={this.onSearch}>
                        <Input ref="postcode" type='search' placeholder='Postcode' />
                    </form>
-
                    {content}
                </div>
            </div>
@@ -1356,7 +1592,6 @@ var Panel = React.createClass({
 
 
 var Main = React.createClass({
-
     contextTypes: {
         router: React.PropTypes.func
     },
@@ -1377,7 +1612,6 @@ var Main = React.createClass({
             PopupDataFetcher.getData(this.props.query.oa, this.props.summary, this.props.theme_boundaries);
         }
     },
-
 
     render() {
         return (
@@ -1488,7 +1722,6 @@ var PopupDataFetcher = {
 
 
 var App = React.createClass({
-
     render() {
         return (
             <RouteHandler

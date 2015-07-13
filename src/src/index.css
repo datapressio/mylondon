@@ -97,59 +97,12 @@
   margin-top: 4px;
   margin-bottom: 4px;
 }
+
 .card img {
   float: right;
 }
 .card input[type="checkbox"] {
   margin-right: 10px;
-}
-
-
-table td.key {
-    width: 200px;
-    font-weight: bold;
-}
-
-.theme {
-}
-
-.theme .icon {
-    height: 70px;
-    width: 70px;
-    float: left;
-}
-.theme .name {
-    height: 70px;
-    width: 170px;
-    float: left;
-    text-align: right;
-    line-height: 70px;
-}
-.theme .percentage {
-    height: 70px;
-    width: 66px;
-    float: left;
-    text-align: center;
-    font-weight: bold;
-    line-height: 70px;
-}
-.theme .bar {
-    height: 40px;
-    margin-top: 15px;
-    width: 240px;
-    float: left;
-    background: #f0f0f0;
-}
-.theme .bar .color {
-    height: 40px;
-}
-.theme .clearfix {
-    clear: both;
-    padding-bottom: 15px;
-}
-
-.tab-content {
-    padding-top: 20px;
 }
 
 
@@ -169,3 +122,21 @@ table td.key {
 }
 
 
+#priorities {
+    list-style-type: none;
+    margin: 0px;
+    padding: 0px;
+}
+[draggable=true] input[type=checkbox] {
+    display: none;
+
+}
+.drag-handle {
+    display: inline-block;
+    width: 210px;
+    cursor: move;
+}
+[draggable=true] .drag-handle {
+    padding-left: 22px;
+    width: 232px;
+}
