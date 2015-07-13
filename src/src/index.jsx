@@ -39,7 +39,6 @@ var resource_ids = {
 }
 
 var L = require('leaflet');
-var d3 = require('d3');
 // These fail due to dependant images not loading, we include the CSS in the HTML instead.
 // require('../node_modules/leaflet/dist/leaflet.css');
 // require('../node_modules/leaflet-minimap/dist/Control.MiniMap.min.css');
@@ -64,7 +63,7 @@ var DefaultRoute = Router.DefaultRoute;
 var Link = Router.Link;
 var RouteHandler = Router.RouteHandler;
 
-var Promise = require('es6-promise').Promise;
+var Promise = require('when').Promise;
 var objectAssign = require('react/lib/Object.assign');
 
 // Bootstrap
@@ -494,21 +493,19 @@ var getPostcodeData = function(postcode) {
         console.log("Querying openstreet map for a postcode: ", postcode)
     }
     return new Promise(function (resolve, reject) {
-        reject("Error getting postcode")
+        request.get('/postcode/'+postcode)
+        .end(function (err, res) {
+            if (err) {
+                console.error('Error:' + err);
+                reject("Error looking up postcode: " + err);
+            } else if (!res.ok) {
+                console.error('Not OK');
+                reject(res.ok);
+            } else {
+                resolve(res.body);
+            }
+        });
     });
-   //     request.get('http://'+HOST+'/postcode/'+postcode)
-   //     .end(function (err, res) {
-   //         if (err) {
-   //             console.error('Error:' + err);
-   //             reject(err);
-   //         } else if (!res.ok) {
-   //             console.error('Not OK');
-   //             reject(res.ok);
-   //         } else {
-   //             resolve(res.body);
-   //         }
-   //     });
-   // });
 };
 
 
@@ -531,14 +528,6 @@ var getGeometry = function(lsoa) {
         });
     });
 };
-
-
-//window.layer_store = {
-//    layers: {},
-//    geometry_pending: {},
-//    data: {},
-//    lsoas: [],
-//};
 
 
 var MapData = React.createClass({
@@ -601,17 +590,6 @@ var MapData = React.createClass({
             onChangePostcode={this.onChangePostcode}
         />
     },
-
-    // shouldComponentUpdate(nextProps, nextState) {
-    //     // If the URL props are the same, there is nothing to do, config won't have changed
-    //     var to_check = ['zoom', 'modal', 'budget', 'bbox', 'priority_order'];
-    //     for (var i=0; i<to_check.length; i++) {
-    //         if (nextProps[to_check[i]] !== this.props[to_check[i]]) {
-    //             return true;
-    //         }
-    //     }
-    //     return false;
-    // },
 
     componentDidMount: function () {
         //console.log('componentDidMount')
@@ -1051,7 +1029,7 @@ var MapData = React.createClass({
                             console.log('Nothing to fetch');
                         }
                         this.component.data.percentage = -1;
-                        this.forceUpdate();
+                        this.component.forceUpdate();
                     } else {
                         var nextPercentage = Math.floor(100*(1-(this.component.data.need_fetching_lsoas.length/this.component.data.lsoas.length)));
                         if (nextPercentage !== 100) {
@@ -1383,10 +1361,6 @@ var Main = React.createClass({
         router: React.PropTypes.func
     },
 
-    renderModal(modal) {
-        return null; //return (<div id="mycity-popup"></div>);
-    },
-
     componentDidUpdate(prevProps, prevState) {
         if (config.debug) {
             console.log('Updated main', this.props.modal, this.props.query.oa, MyCity.oa);
@@ -1404,25 +1378,8 @@ var Main = React.createClass({
         }
     },
 
-    hideModal() {
-        var query = objectAssign({}, this.props.query, {oa: undefined, lsoa: undefined});
-        this.context.router.transitionTo('map', this.props.params, query);
-    },
 
     render() {
-        var modal = this.renderModal(
-            <OAPopup
-                backdrop={false}
-                onRequestHide={this.hideModal}
-                params={this.props.params}
-                query={this.props.query}
-                summary={this.props.summary}
-                oa={this.props.query.oa}
-                lsoa={this.props.query.lsoa}
-                boundary_scores={this.props.boundary_scores}
-                theme_boundaries={this.props.theme_boundaries}
-            />
-        );
         return (
             <div>
                 <Map
@@ -1452,83 +1409,11 @@ var Main = React.createClass({
                     zoom={this.props.zoom}
                     onChangePostcode={this.props.onChangePostcode}
                 />
-                {modal}
             </div>
         )
     }
 });
 
-
-
-var Chart = React.createClass({
-    propTypes: {
-        stats: React.PropTypes.array,
-    },
-
-    componentDidMount: function() {
-        var el = this.getDOMNode();
-        var chart = d3.select(el);
-        // This is the d3 way of creating a set of classed div elements that didn't exist before
-        var boxes = chart.selectAll( ".theme" ).data(this.props.stats)
-            .enter()
-            .append("div")
-            .classed("theme", true)
-        console.log(boxes)
-        // Now we can change each of the themes in turn
-        boxes.append("img")
-            .classed("icon", true)
-            .attr("src", function(d) {
-                return 'http/'+d['icon'];
-             });
-        boxes.append("div")
-            .classed("name", true)
-            .html(function(d) {
-                return d['name']
-            });
-        boxes.append("div")
-            .classed("percentage", true)
-            .html(function(d) {
-                return d['value']+"%" }
-            );
-        boxes.append("div")
-            .classed("bar", true)
-            .append("div")
-                .classed("color", true)
-                .style("background-color", function(d) {
-                    return d['colour']
-                })
-                .style("width", function(d) {
-                    return 0+"px"
-                 })
-                .transition()
-                .style("width", function(d) {
-                    return (d['value']*2.4)+"px"
-                 })
-                .duration(600);
-        boxes.append("div")
-            .classed("clearfix", true);
-    },
-
-    componentDidUpdate: function() {
-        var el = this.getDOMNode();
-        // Re-compute the scales, and render the data points
-        // nothing to do here
-        // update(el, this.props.stats);
-    },
-
-    componentWillUnmount: function() {
-        var el = this.getDOMNode();
-        // Any clean-up would go here
-        // in this example there is nothing to do
-        // destroy(el);
-    },
-
-    render: function() {
-        return (
-            <div className="chart"></div>
-        );
-    }
-});
 
 // XXX Maybe this shouldn't be a component
 var PopupDataFetcher = {
@@ -1602,288 +1487,6 @@ var PopupDataFetcher = {
 };
 
 
-var OAPopup = React.createClass({
-    componentWillReceiveProps: function (newProps) {
-        if (newProps.oa !== this.props.oa) {
-            this.data = {
-                timeToBank: null,
-                postcode: null,
-                fareZone: null,
-                schools: null,
-                areaDescription: null,
-                rent: null,
-                geo: null,
-            }
-            this.getData();
-        }
-    },
-    componentWillMount: function() {
-        this.data = {
-            timeToBank: null,
-            postcode: null,
-            fareZone: null,
-            schools: null,
-            areaDescription: null,
-            rent: null,
-            geo: null,
-        }
-    },
-    componentDidMount: function() {
-        this.getData();
-    },
-    getData: function() {
-        resolveHash(
-            [
-                getRentFromOA(this.props.oa).then(
-                    function(result) {
-                        this.data.rent = result;
-                    }.bind(this)
-                ),
-                getTimeToBankFromOA(this.props.oa).then(
-                    function(result) {
-                        this.data.timeToBank = result;
-                    }.bind(this)
-                ),
-                getPostcodeFromOA(this.props.oa).then(
-                    function(result) {
-                        this.data.postcode = result;
-                    }.bind(this)
-                ),
-                getFareZoneFromOA(this.props.oa).then(
-                    function(result) {
-                        this.data.fareZone = result;
-                    }.bind(this)
-                ),
-                getSchoolsFromOA(this.props.oa).then(
-                    function(result) {
-                        this.data.schools = result;
-                    }.bind(this)
-                ),
-                getAreaDescriptionFromOA(this.props.oa).then(
-                    function(result) {
-                        this.data.areaDescription = result;
-                    }.bind(this)
-                ),
-                getGeospatialFromOA(this.props.oa).then(
-                    function(result) {
-                        this.data.geo = result;
-                    }.bind(this)
-                ),
-            ]
-        ).then(
-            function(result) {
-                MyCity.plugin.onReceiveData(this.data);
-                this.forceUpdate();
-            }.bind(this)
-        )
-    },
-
-    render: function() {
-        // console.log(this.props.summary[this.props.oa])
-        if (!this.props.summary || !this.data.schools || !this.props.summary[this.props.oa]) {
-            return null;
-        } else {
-            // title={'Postcode: BR1, Fare Zone: 1, OA: '+this.props.query.oa}
-            var time_to_bank = null;
-            var schools = null;
-            if (this.data.schools) {
-                var schools_rows = [];
-                if (this.data.schools.PSchoolName1 !== 'no data') {
-                    schools_rows.push(
-                        <tr key="1"><td>Primary School</td><td>{this.data.schools.PSchoolName1}</td><td>{this.data.schools.PSchool1Percent}%</td></tr>
-                    )
-                }
-                if (this.data.schools.PSchoolName2 !== 'no data') {
-                    schools_rows.push(
-                        <tr key="2"><td>Primary School</td><td>{this.data.schools.PSchoolName2}</td><td>{this.data.schools.PSchool2Percent}%</td></tr>
-                    )
-                }
-                if (this.data.schools.PSchoolName3 !== 'no data') {
-                    schools_rows.push(
-                        <tr key="3"><td>Primary School</td><td>{this.data.schools.PSchoolName3}</td><td>{this.data.schools.PSchool3Percent}%</td></tr>
-                    )
-                }
-                if (this.data.schools.SSchoolName1 !== 'no data') {
-                    schools_rows.push(
-                        <tr key="4"><td>Secondary School</td><td>{this.data.schools.SSchoolName1}</td><td>{this.data.schools.SSchool1Percent}%</td></tr>
-                    )
-                }
-                if (this.data.schools.SSchoolName2 !== 'no data') {
-                    schools_rows.push(
-                        <tr key="5"><td>Secondary School</td><td>{this.data.schools.SSchoolName2}</td><td>{this.data.schools.SSchool2Percent}%</td></tr>
-                    )
-                }
-                if (this.data.schools.SSchoolName3 !== 'no data') {
-                    schools_rows.push(
-                        <tr key="6"><td>Secondary School</td><td>{this.data.schools.SSchoolName3}</td><td>{this.data.schools.SSchool3Percent}%</td></tr>
-                    )
-                }
-                schools = (
-                    <table className="mylondon-table schools table table-bordered">
-                        <tr>
-                            <th className="noborder"></th>
-                            <th>Name</th>
-                            <th>Percent</th>
-                        </tr>
-                        {schools_rows}
-                    </table>
-                )
-            }
-            if (this.data.timeToBank) {
-                time_to_bank = (
-                    <table className="mylondon-table transport table table-bordered">
-                        <tr>
-                            <th className="noborder"></th>
-                            <th>Time (mins)</th>
-                            <th>Distance (miles)</th>
-                        </tr>
-                        <tr>
-                            <td>Driving</td>
-                            <td>{this.data.timeToBank.driving_time_mins}</td>
-                            <td>{this.data.timeToBank.driving_distance_miles}</td>
-                        </tr>
-                        <tr>
-                            <td>Walking</td>
-                            <td>{this.data.timeToBank.walking_time_mins}</td>
-                            <td>{this.data.timeToBank.walking_distance_miles}</td>
-                        </tr>
-                        <tr>
-                            <td>Cycling</td>
-                            <td>{this.data.timeToBank.cycling_time_mins}</td>
-                            <td>{this.data.timeToBank.cycling_distance_miles}</td>
-                        </tr>
-                        <tr>
-                            <td>Public Transport</td>
-                            <td>{this.data.timeToBank.public_transport_time_mins}</td>
-                            <td>(no data)</td>
-                        </tr>
-                    </table>
-                )
-            }
-            return (
-                <Modal
-                    {...this.props}
-                    bsStyle="primary"
-                    animation={false}
-                    backdrop={this.props.backdrop}
-                >
-                    <div className="modal-body" id="myLondonPopup">
-                        <div className="closeButton">
-                            <button
-                                type="button"
-                                className="close"
-                                aria-hidden="true"
-                                onClick={this.props.onRequestHide}
-                            >×</button>
-                        </div>
-                        <div className="scroller">
-                            <div className="section section-rent">
-                                <h2>
-                                    <img src="http/logo-rent.png" className="section-icon" />
-                                    Rent
-                                </h2>
-                                <div className="inner">
-                                    <dl>
-                                        <dt>Postcode District</dt>
-                                        <dd>
-                                            <code>{this.data.postcode}</code> (Useful for searching on property websites)
-                                        </dd>
-                                    </dl>
-                                    <table className="mylondon-table rent table table-bordered">
-                                        <thead>
-                                            <tr><th className="noborder"></th><th>Cost per month</th></tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr><th>1 Bed Property</th><td>&pound;{this.data.rent.Ave_rent_1_bedroom}</td></tr>
-                                            <tr><th>2 Bed Property</th><td>&pound;{this.data.rent.Ave_rent_2_bedroom}</td></tr>
-                                            <tr><th>3 Bed Property</th><td>&pound;{this.data.rent.Ave_rent_3_bedroom}</td></tr>
-                                            <tr><th>4 Bed Property</th><td>&pound;{this.data.rent.Ave_rent_4_bedroom}</td></tr>
-                                        </tbody>
-                                    </table>
-                                    <p className="text-muted last">
-                                        The budget slider on the map uses the value for a 1 bedroom property.
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="section section-schools">
-                                <h2>
-                                    <img src="http/logo-schools.png" className="section-icon" />
-                                    Schools
-                                </h2>
-                                <div className="inner">
-                                    <p><strong>Overall: </strong>{display_score(this.props.boundary_scores, this.props.summary[this.props.oa].schools)}</p>
-                                    {schools}
-                                    <p className="last">
-                                        <a href={"https://www.london.gov.uk/webmaps/lsa/?x=" + this.data.geo.EASTING + '&y=' + this.data.geo.NORTHING}>
-                                            View more detailed information for this area on the schools atlas
-                                        </a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="section section-transport">
-                                <h2>
-                                    <img src="http/logo-transport.png" className="section-icon" />
-                                    Transport
-                                </h2>
-                                <div className="inner">
-                                    <p><strong>Overall: </strong>{display_score(this.props.boundary_scores, this.props.summary[this.props.oa].transport)}</p>
-                                    <p className="last"><strong>Fare Zone: {this.data.fareZone}</strong></p>
-                                    {time_to_bank}
-                                </div>
-                            </div>
-                            <div className="section section-green">
-                                <h2>
-                                    <img src="http/logo-green-space.png" className="section-icon" />
-                                    Green Space
-                                </h2>
-                                <div className="inner">
-                                    <p className="last"><strong>Overall: </strong>{display_score(this.props.boundary_scores, this.props.summary[this.props.oa].green_space)}</p>
-                                </div>
-                            </div>
-                            <div className="section section-crime">
-                                <h2>
-                                    <img src="http/logo-crime.png" className="section-icon" />
-                                    Community Safety
-                                </h2>
-                                <div className="inner">
-                                    <p><strong>Overall: </strong>{display_score(this.props.boundary_scores, this.props.summary[this.props.oa].safety)}</p>
-                                    <p className="last">
-                                        <a href={"http://maps.met.police.uk/index.php?areacode=" + this.data.geo.lsoa + "&crimetype=8"}>
-                                            View more detailed information for this area on the MET police crime map
-                                        </a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="section section-geospatial">
-                                <h2>
-                                    <img src="http/logo-geospatial.png" className="section-icon" />
-                                    Area Information
-                                </h2>
-                                <div className="inner">
-                                    <p>{this.data.areaDescription.General_description}</p>
-                                    <p>{this.data.areaDescription.OA_description}</p>
-                                </div>
-                            </div>
-                            <table className="mylondon-table geospatial-information table table-bordered">
-                                <tbody>
-                                <tr><th>Postcode District</th><td>{this.data.postcode}</td></tr>
-                                <tr><th>#LSOA</th><td>{this.data.geo.lsoa}</td></tr>
-                                <tr><th>#OA</th><td>{this.data.geo.oa}</td></tr>
-                                <tr><th>Easting</th><td>{this.data.geo.EASTING}</td></tr>
-                                <tr><th>Northing</th><td>{this.data.geo.NORTHING}</td></tr>
-                                <tr><th>Latitude</th><td>{this.data.geo.Latitude}</td></tr>
-                                <tr><th>Longitude</th><td>{this.data.geo.Longitude}</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </Modal>
-            );
-        }
-    }
-});
-
-
 var App = React.createClass({
 
     render() {
@@ -1918,5 +1521,6 @@ Router.run(routes, function (Handler, router_state) {
         document.getElementById("App")
     );
 });
+
 
 module.exports = routes;

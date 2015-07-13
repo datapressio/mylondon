@@ -9,8 +9,6 @@
   "dependencies": {
     "bootstrap": "3.3.4",
     "bootstrap-slider": "4.5.2",
-    "d3": "3.5.5",
-    "es6-promise": "1.0.0",
     "jquery": "2.1.4",
     "leaflet": "0.7.3",
     "leaflet-minimap": "2.1.0",
