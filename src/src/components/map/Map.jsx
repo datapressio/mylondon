@@ -80,8 +80,7 @@ var Map = React.createClass({
         //     }
         // ).addTo(map);
         L.tileLayer(
-            'http://{s}.tiles.mapbox.com/v3/examples.map-20v6611k/{z}/{x}/{y}.png',
-            // 'https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png',
+            'http://api.tiles.mapbox.com/v4/datapress.e76f92c6/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZGF0YXByZXNzIiwiYSI6IjVjZWM0ZTAyYWNkODMzY2IzNWVmNjA1ZTNjNjlkYjRlIn0.HXtDPQYO24g5YIpvHgr-sg',
             {
                 maxZoom: 18,
                 attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +

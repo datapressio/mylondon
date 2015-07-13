@@ -1,6 +1,35 @@
 MyLondon
 ========
 
+MapBox
+------
+
+You can edit the background map here:
+
+https://www.mapbox.com/editor/?id=datapress.e76f92c6#project
+
+Then save your changes.
+
+You'll need to clear the browser cache to refresh any tiles that have already
+been served (otherwise you'll see the old ones).
+
+Each request is made with an access_token generated here:
+
+https://www.mapbox.com/account/apps/
+
+It is my understanding that since the `mylondon` token now in this repo and is
+publically embedded in the app, someone could steal it. This means you must be
+prepared to rotate it with a new public API key at some point if theft happens.
+This doesn't seem a great solution to me, but maybe it is.
+
+I expect you'll have to pay for tiles at some point. If you don't do this up
+front I expect the tiles will just stop serving. This wouldn't be good.
+
+Never give out your Default Secret Token.
+
+Install
+-------
+
 Install node and npm if you need to and set up the path.
 
 On linux:

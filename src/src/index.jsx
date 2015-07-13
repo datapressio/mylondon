@@ -773,7 +773,7 @@ var MapData = React.createClass({
         // Parse URL information
         var zoom = parseInt(props.query.zoom || '15')
         var modal = props.query.oa || null;
-        var budget = parseInt(props.query.budget || '450')
+        var budget = parseInt(props.query.budget || '1000')
         if (props.query.bbox) {
             var bbox = props.query.bbox.split(',')
             bbox[0] = parseFloat(bbox[0])
