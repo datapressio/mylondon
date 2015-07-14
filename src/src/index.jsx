@@ -493,7 +493,7 @@ var getPostcodeData = function(postcode) {
         console.log("Querying openstreet map for a postcode: ", postcode)
     }
     return new Promise(function (resolve, reject) {
-        request.get('/postcode/'+postcode)
+        request.get('http://api.postcodes.io/postcodes/'+postcode)
         .end(function (err, res) {
             if (err) {
                 console.error('Error:' + err);
@@ -539,16 +539,18 @@ var MapData = React.createClass({
     onChangePostcode(postcode) {
         getPostcodeData(postcode).then(
             function(data) {
-                if (!data.zoom) {
-                    data.zoom = 14;
-                } else if (data.zoom < 13) {
-                    data.zoom = 13;
-                }
-                var query = objectAssign({}, this.props.query, data);
+                var newParams = {
+                    zoom: 15,
+                    latitude: data.result.latitude,
+                    longitude: data.result.longitude,
+                    bbox: undefined,
+                };
+                var query = objectAssign({}, this.props.query, newParams);
                 this.context.router.transitionTo('map', this.props.params, query);
+                console.info(newParams);
             }.bind(this),
             function(data) {
-                alert('Error getting postcode information.');
+                alert('Sorry, there is no information available for that postcode.');
             }.bind(this)
         );
     },
@@ -864,6 +866,13 @@ var MapData = React.createClass({
             weight = 1;
         }
 
+        if (!bbox && this.data.map && props.query.latitude && props.query.longitude) {
+            console.log('Moving the map to the postcode');
+            this.data.map.setView(
+                [props.query.latitude, props.query.longitude],
+                props.query.zoom || 15
+            );
+        }
         // If we don't have all the information we need yet, there is no more to do.
         if (!(bbox && zoom && this.data.map && this.data.summary)) {
             if (config.debug) {
