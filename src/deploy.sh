@@ -23,6 +23,7 @@ mkdir -p $TMP
 cp index.html $TMP
 cp mycity.css $TMP
 cp mycity.js $TMP
+cp favicon* $TMP
 cp -r build $TMP
 cp -r http $TMP
 
