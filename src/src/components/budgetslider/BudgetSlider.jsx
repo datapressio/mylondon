@@ -28,7 +28,7 @@ var BudgetSlider = React.createClass({
             )
         } else {
             var description = (
-                <span>BUDGET: MONEY IS NO OBJECT</span>
+                <span>DRAG THE SLIDER TO SET MAX BUDGET</span>
             )
         }
         return (
