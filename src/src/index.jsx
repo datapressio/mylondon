@@ -1509,7 +1509,7 @@ var Panel = React.createClass({
                 console.log('panel', this.props.query);
             }
             var content = (
-                <div>
+                <div className="advanced-controls">
                     <BudgetSlider
                         budget={this.props.budget}
                         params={this.props.params}
