@@ -136,13 +136,13 @@ window.MyCity = {
         { "name" : data.schools['PSchoolName1'], "value" : school_p_data[0], "color" : school_p_color[0] },
         { "name" : data.schools['PSchoolName2'], "value" : school_p_data[1], "color" : school_p_color[1] },
         { "name" : data.schools['PSchoolName2'], "value" : school_p_data[2], "color" : school_p_color[2] },
-        { "name" : "Unknown",                    "value" : school_p_data[3], "color" : "#999" },
+        { "name" : "Other Schools",              "value" : school_p_data[3], "color" : "#999" },
       ];
       var school_s_text = [
         { "name" : data.schools['SSchoolName1'], "value" : school_s_data[0], "color" : school_s_color[0] },
         { "name" : data.schools['SSchoolName2'], "value" : school_s_data[1], "color" : school_s_color[1] },
         { "name" : data.schools['SSchoolName2'], "value" : school_s_data[2], "color" : school_s_color[2] },
-        { "name" : "Unknown",                    "value" : school_s_data[3], "color" : "#999" },
+        { "name" : "Other Schools",              "value" : school_s_data[3], "color" : "#999" },
       ];
       popup.select(".box-schools .left  .text").html( render_school_text("Primary Schools", school_p_text) );
       popup.select(".box-schools .right .text").html( render_school_text("Secondary Schools", school_s_text) );
