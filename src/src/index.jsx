@@ -85,7 +85,6 @@ var throttle = require('./components/throttle');
 
 // Our Components
 var Map = require('./components/map/Map');
-// var Priorities = require('./components/drag/Priorities');
 var BudgetSlider = require('./components/budgetslider/BudgetSlider');
 
 require('./index.css')
@@ -1287,37 +1286,13 @@ var MapData = React.createClass({
 
 
 var Sortable = require('sortablejs');
-// var SortableMixin = require('sortablejs/react-sortable-mixin.js');
-
-//var Priorities1 = React.createClass({
-//    mixins: [SortableMixin],
-//
-//    getInitialState: function() {
-//        return {
-//            items: ['One', 'Two', 'Three', 'Four']
-//        };
-//    },
-//
-//    // handleSort: function (evt) {
-//    //     alert('Sorted');
-//    // },
-//
-//    render: function() {
-//        return <ul>{
-//            this.state.items.map(function (text) {
-//                return <li><div style={{height: "40px", color: "#ccc"}}>{text}</div></li>
-//            })
-//        }</ul>
-//    }
-//});
-//
-//
-//// React.render(<SortableList />, document.body);
-
 
 
 var Priorities = React.createClass({
     render() {
+        if (config.debug) {
+            console.log('Priorities query:', this.props.query);
+        }
         return (
             <div>
                 <Container
@@ -1341,7 +1316,8 @@ var move = function (arr, old_index, new_index) {
     return this; // for testing purposes
 };
 
-
+// Allow the native sortable to see the latest query
+var latestQuery = {};
 var Container = React.createClass({
     contextTypes: {
         router: React.PropTypes.func
@@ -1358,11 +1334,8 @@ var Container = React.createClass({
         this.props.cards.map(card => {
             curPriority.push(''+card.id);
         })
-        console.log(curPriority)
         this.sortable.sort(curPriority);
-        // console.log('Re-creating sortable... ');
-        // var list = this.getDOMNode();
-        // this.sortable = this.makeSortable(list);
+        console.info('Updated priority order to:', curPriority.join(','))
     },
 
     componentDidMount() {
@@ -1382,13 +1355,10 @@ var Container = React.createClass({
                     priority.push(this.props.cards[i].id)
                 }
                 var moved = priority[e.oldIndex]
-                console.log('Need to move:', e.oldIndex, e.newIndex, priority.join(','))
+                console.log('Need to move item', e.oldIndex, 'to', e.newIndex +', currently:', priority.join(','))
                 priority.splice(e.newIndex, 0, priority.splice(e.oldIndex, 1)[0]);
-                console.log('After:', priority.join(','))
                 console.info('New priority order:', priority.join(','));
                 var query = objectAssign({}, this.props.query, {priority: priority.join(',')});
-                //console.log('Destroy sortable...')
-                //this.sortable.destroy();
                 this.context.router.replaceWith('map', this.props.params, query);
             }.bind(this)
         });
@@ -1396,39 +1366,37 @@ var Container = React.createClass({
     },
 
     shouldComponentUpdate(nextProps, nextState) {
-        console.log('Checking for update...');
+        if (config.debug) {
+            console.log('Checking for update and updating the latestQuery variable:', nextProps.query);
+        }
+        latestQuery = nextProps.query;
         var curPriority = []
         this.props.cards.map(card => {
             curPriority.push(card.id);
         })
-	var nextPriority = []
+        var nextPriority = []
         nextProps.cards.map(card => {
             nextPriority.push(card.id);
         })
         if (nextPriority.join(',') !== curPriority.join(',') || nextProps.disabled_themes.join(',') !== this.props.disabled_themes.join(',')) {
-            console.log('Need to update...', nextProps.cards, this.props.cards);
-            // if (this.sortable) {
-            //     console.log('Destroying sortable', this.sortable);
-            //     this.sortable.destroy();
-            //     this.sortable = null;
-            //     console.log('Destroyed sortable', this.sortable);
-            // }
+            console.log('Need to update the themes order.');
             return true;
         }
         return false;
     },
 
     render() {
-        console.log('Rendering priorities ...');
+        if (config.debug) {
+            console.log('Rendering container ...');
+            console.log('Container query', this.props.query);
+        }
         return (
                 <ul id="priorities" className="block__list block__list_words">
                     {this.props.cards.map(card => {
-                        console.log('Card '+card.id);
                         var disabled = false;
                         if (this.props.disabled_themes.indexOf(card.id) !== -1) {
                             var disabled = true;
                         }
-                        // console.log('zzzzzzzzzzzzzzzzzzzz', this.props.disabled_themes, card.id, disabled)
                         return (
                             <Card key={card.id}
                                 id={card.id}
@@ -1455,7 +1423,6 @@ var Card = React.createClass({
     },
 
     handleChange: function(event) {
-        // console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', this.props.disabled, this.props.id);
         if (!this.props.disabled) {
             var disabled_themes = this.props.disabled_themes.slice()
             disabled_themes.push(this.props.id)
@@ -1467,11 +1434,18 @@ var Card = React.createClass({
                 }
             }
         }
-        var query = objectAssign({}, this.props.query, {disabled_themes: disabled_themes.join(',')});
-        this.context.router.transitionTo('map', this.props.params, query);
+        // Taking the query information from the global cache, updated by
+        // shouldComponentUpdate, not the react prop, because this may be out
+        // of date due to shouldComponentUpdate returning false to allow the
+        // native DOM Sortable code to take over.
+        var query = objectAssign({}, latestQuery, {disabled_themes: disabled_themes.join(',')});
+        this.context.router.replaceWith('map', this.props.params, query);
     },
 
     render() {
+        if (config.debug) {
+            console.log('Card query:', this.props.query);
+        }
         var opacity = 1;
         var backgrounds = {
           1: '#eed645',
@@ -1487,13 +1461,7 @@ var Card = React.createClass({
             newStyles['background'] = '#333';
         }
         var textStyles = {
-            // background: 'none',
-            // border: 0,
             cursor: 'move',
-            // width: '204px',
-            // textAlign: 'left',
-            // outline: 'none',
-            // display: 'inline-block',
         }
         var img = (<span style={{width: 20, display: 'inline-block'}}></span>);
         if (this.props.disabled) {
@@ -1501,6 +1469,7 @@ var Card = React.createClass({
         } else {
             img = (<img src={this.props.icon} style={{width: '20px', cursor: 'move'}}/>)
         }
+
         return (
             <li data-id={this.props.id}>
                 <div style={newStyles} className="card">
@@ -1536,6 +1505,9 @@ var Panel = React.createClass({
                 <p>Zoom in more to see shaded regions of London.</p>
             )
         } else {
+            if (config.debug) {
+                console.log('panel', this.props.query);
+            }
             var content = (
                 <div>
                     <BudgetSlider
@@ -1582,9 +1554,7 @@ var Panel = React.createClass({
         return (
             <div>
                {loading}
-               <div className={className} style={{
-                   height: 440, //window.innerHeight - 250,
-               }}>
+               <div className={className}>
                    <div className="h1-line left"></div>
                    <h1 className="my">MY</h1>
                    <div className="h1-line right"></div>

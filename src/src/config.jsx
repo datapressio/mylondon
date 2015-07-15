@@ -9,7 +9,7 @@ var raw_data = {
         [40, 30, 20, 10],
     ],
     throttle: 250,
-    debug: false,
+    debug: true,
     colors: [
         // '#f7fcf5',
         '#e5f5e0',

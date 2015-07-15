@@ -92,6 +92,7 @@
   border-top: 4px solid #96bf31;
 }
 .card {
+  box-sizing: border-box;
   padding: 8px 10px;
   color: #4d4d4d;
   margin-top: 4px;
