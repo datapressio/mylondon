@@ -421,9 +421,6 @@ h1,h2,h3,h4{
 }
 .help .arrow {
   position: absolute;
-  font-size: 80px;
-  color: #fff;
-  text-shadow: 0 0 3px #000;
   z-index: -1;
 }
 
@@ -437,11 +434,11 @@ h1,h2,h3,h4{
   top: 300px;
 }
 .help1 .arrow {
-  top: -70px;
-  left: -30px;
+  top: -40px;
+  left: -40px;
 }
 .help2 .arrow {
-  top: -70px;
-  right: -30px;
+  top: -34px;
+  right: -42px;
 }
 

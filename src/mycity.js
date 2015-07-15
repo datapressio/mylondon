@@ -11,9 +11,9 @@ function addHelp1() {
       .attr("class","btn btn-sm btn-primary")
       .html("Next &raquo;")
       .on("click", function() { help1.remove(); addHelp2(); });
-  help1.append("div")
+  help1.append("img")
     .attr("class","arrow")
-    .html("&#11017;");
+    .attr("src","/http/art/arrow.png");
 }
 
 function addHelp2() {
@@ -28,9 +28,9 @@ function addHelp2() {
       .attr("class","btn btn-sm btn-primary")
       .text("Got it!")
       .on("click", function() { help2.remove(); });
-  help2.append("div")
+  help2.append("img")
     .attr("class","arrow")
-    .html("&#11016;");
+    .attr("src","/http/art/arrow2.png");
 }
 addHelp1();
 
