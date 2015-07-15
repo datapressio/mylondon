@@ -721,7 +721,7 @@ var MapData = React.createClass({
                                 weight: 5,
                                 fillOpacity: (0.3),
                                 fillColor: '#ffffff',
-                                opacity: 1,
+                                opacity: 0.5,
                             });
                         } else {
                             layer.oas[oa].setStyle({
@@ -757,8 +757,8 @@ var MapData = React.createClass({
                                 color: colors[bucket],
                                 stroke: true,
                                 weight: weight,
-                                fillOpacity: (0.5 + (bucket/7)/3),
-                                opacity: (0.5 + (bucket/7)/3),
+                                fillOpacity: (0.3 + (bucket/7)/3),
+                                opacity: (0.55) - ((bucket/7)/2),
                                 fillColor: colors[bucket],
                             });
                         }
@@ -860,7 +860,7 @@ var MapData = React.createClass({
         })
 
         // Choose how thick the lines around OAs should be based on the zoom level
-        var weight=0;
+        var weight = 2;
         if (zoom < 15) {
             weight = 1;
         }
