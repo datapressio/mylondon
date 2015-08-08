@@ -2,7 +2,7 @@
 
 TMP=/tmp/deploy_mylondon
 DEST_HOST=s3-eu-west-1.amazonaws.com
-DEST_BUCKET=s3://mylondon.datapress.io/
+DEST_BUCKET=s3://my.london.gov.uk/
 
 if [ -z $AWS_ACCESS_KEY ] ; then
   echo "Missing environment variable: \$AWS_ACCESS_KEY."
