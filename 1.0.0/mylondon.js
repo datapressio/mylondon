@@ -96,7 +96,7 @@ window.MyCity = {
     },
 
     schoolGraphUpdate: function(data) {
-      popup.select('.box-schools h3').html("Overall: <span class=\"color\">"+data.scores.schools+"</span>");
+      popup.select('.box-schools h3').html("Overall: <span class=\"color\">"+data.rankLabel.schools+"</span>");
       function render_school_text( title, scores ) {
         out = '<table><thead><tr><th colspan="2">'+title+'</th></tr></thead>';
         out += '<tbody>';
@@ -228,17 +228,17 @@ window.MyCity = {
     },
 
     transportGraphUpdate: function(data) {
-      popup.select('.box-transport h3').html("Overall: <span class=\"color\">"+data.scores.transport+"</span> Zone: <span class=\"color\">"+data.fareZone+"</span>");
+      popup.select('.box-transport h3').html("Overall: <span class=\"color\">"+data.rankLabel.travel+"</span> Zone: <span class=\"color\">"+data.fareZone.Fare_Zone+"</span>");
       // ====
-      var timeToBank = [
-        { color: '#e8dec8', img : "walk.png", minutes:data.timeToBank.walking_time_mins, miles: data.timeToBank.walking_distance_miles },
-        { color: '#eed545', img : "cycle.png",    minutes:data.timeToBank.cycling_time_mins, miles: data.timeToBank.cycling_distance_miles },
-        { color: '#db6b66', img : "public-transport.png",    minutes:data.timeToBank.public_transport_time_mins, miles: '--' },
-        { color: '#5da7a8', img : "car.png",     minutes:data.timeToBank.driving_time_mins, miles: data.timeToBank.driving_distance_miles },
+      var travel = [
+        { color: '#e8dec8', img : "walk.png", minutes:data.travel.walking_time_mins, miles: data.travel.walking_distance_miles },
+        { color: '#eed545', img : "cycle.png",    minutes:data.travel.cycling_time_mins, miles: data.travel.cycling_distance_miles },
+        { color: '#db6b66', img : "public-transport.png",    minutes:data.travel.public_transport_time_mins, miles: '--' },
+        { color: '#5da7a8', img : "car.png",     minutes:data.travel.driving_time_mins, miles: data.travel.driving_distance_miles },
       ];
       popup.select(".box-transport .graph")
         .selectAll(".cell")
-        .data(timeToBank)
+        .data(travel)
         .enter()
           .append("div")
           .classed("cell",true)
@@ -274,23 +274,23 @@ window.MyCity = {
         };
       }
       popup.selectAll(".box-transport .graph .minutes")
-        .data( timeToBank )
+        .data( travel )
         .transition()
         .duration(750)
         .tween("text", minutesTween);
       popup.selectAll(".box-transport .graph .miles")
-        .data( timeToBank )
+        .data( travel )
         .transition()
         .duration(750)
         .tween("text", milesTween);
     },
 
     greenSpaceGraphUpdate: function(data) {
-      popup.select('.box-greenspace h3').html("Overall: <span class=\"color\">"+data.scores.green_space+"</span>");
+      popup.select('.box-greenspace h3').html("Overall: <span class=\"color\">"+data.rankLabel.green+"</span>");
       var max = 30;
       var colz = d3.interpolateRgb("#e8dec8","#5da173");
       var cells = popup.select('.box-greenspace .green-space-meter').selectAll('.cell').data(d3.range(max));
-      var score = scoreForWord(data.scores.green_space);
+      var score = data.summary.green;
       if (this._lastGreenScore==undefined) {
         this._lastGreenScore = 0;
       }
@@ -320,7 +320,7 @@ window.MyCity = {
     },
 
     safetyGraphUpdate: function(data) {
-      popup.select('.box-safety h3').html("Overall: <span class=\"color\">"+data.scores.safety+"</span>");
+      popup.select('.box-safety h3').html("Overall: <span class=\"color\">"+data.rankLabel.safety+"</span>");
       var arc = d3.svg.arc()
         .outerRadius( 111 )
         .innerRadius( 94 )
@@ -338,7 +338,7 @@ window.MyCity = {
           .sort(null)
           .startAngle(-Math.PI/2)
           .endAngle(Math.PI/2);
-      var score = scoreForWord(data.scores.safety);
+      var score = data.summary.safety;
       score = pie([ score, 1-score ]);
       // ===
       if ( this.safetyGraph == undefined ) {
@@ -360,26 +360,10 @@ window.MyCity = {
     },
 
     plugin: {
-        onClickOA: function(oa, lsoa) {
-            // alert('Clicked OA: ' + oa + ', LSOA: ' + lsoa);
-            // console.log("onClickOA",oa,lsoa);
-            // popup.innerHTML = 'OA <a href="javascript: MyCity.plugin.close()">x</a>';
-            popup.classed("offscreen",false);
-            // if ( ! popup.selectAll(".box .loading")[0].length ) {
-            //   popup.selectAll(".box")
-            //     .append("div")
-            //     .classed("loading",true)
-            //     .text("Waiting for API...")
-            //     .transition()
-            //       .delay(500)
-            //       .style("opacity","0.7");
-            // }
-        },
-
         onReceiveData: function(data) {
           d3.select('.help1').remove();
           d3.select('.help2').remove();
-            popup.select('.box-rent h3').html("<span class=\"color\">"+data.postcode+":</span> Cost Per Month");
+            popup.select('.box-rent h3').html("<span class=\"color\">"+data.postcode.PC_DIST+":</span> Cost Per Month");
             // d3.selectAll(".box .loading").transition().style("opacity","0").each("end", function() { d3.selectAll(".box .loading").remove(); });
             MyCity.rentGraphUpdate(data);
             MyCity.schoolGraphUpdate(data);
@@ -388,8 +372,8 @@ window.MyCity = {
             MyCity.safetyGraphUpdate(data);
             // ====
             var dataTable = "";
-            dataTable += "<tr><td class=\"left\">Postcode</td><td class=\"right\">"+data.postcode+"</td></tr>";
-            dataTable += "<tr><td class=\"left\">OA Code</td><td class=\"right\">"+data.oa+"</td></tr>";
+            dataTable += "<tr><td class=\"left\">Postcode</td><td class=\"right\">"+data.postcode.PC_DIST+"</td></tr>";
+            dataTable += "<tr><td class=\"left\">OA Code</td><td class=\"right\">"+data.geo.oa+"</td></tr>";
             dataTable += "<tr><td class=\"left\">LSOA Code</td><td class=\"right\">"+data.geo.lsoa+"</td></tr>";
             dataTable += "<tr><td class=\"left\">Easting</td><td class=\"right\">"+data.geo.EASTING+"</td></tr>";
             dataTable += "<tr><td class=\"left\">Northing</td><td class=\"right\">"+data.geo.NORTHING+"</td></tr>";
@@ -397,12 +381,12 @@ window.MyCity = {
             dataTable += "<tr><td class=\"left\">Latitude</td><td class=\"right\">"+data.geo.Latitude+"</td></tr>";
 
             popup.select('.box-info1 .graph').html("<table>"+dataTable+"</table>");
-            popup.select('.box-info2 .graph').html(data.areaDescription['OA_description']);
-            popup.select('.box-info3 .graph').html(data.areaDescription['General_description']);
+            popup.select('.box-info2 .graph').html(data.area.OA_description.trim());
+            popup.select('.box-info3 .graph').html(data.area.General_description.trim());
         },
         close: function() {
             popup.classed("offscreen",true);
-            MyCity.close();
+            // MyCity.close();
         }
     }
 };
@@ -410,6 +394,7 @@ window.MyCity = {
 // Set up global namespace for popup
 window.popup = d3.select("#mycity-popup");
 popup.html('\
+<div style="padding: 15px">\
   <div class="main-logo">\
     <div class="line line-left"></div>\
     <div class="line line-right"></div>\
@@ -516,4 +501,95 @@ popup.html('\
       </div>\
     </div>\
   </div>\
+</div>\
 ');
+
+
+var rankToLabel = function(pos, max) {
+  var rank = pos/max;
+  if (rank < 3*max/8) {
+    return 'Below Average'
+  } else if (rank < 5*max/8) {
+    return 'Average'
+  } else if (rank < 7*max/8) {
+    return 'Above Average'
+  } else {
+    return 'Top 20 percent' // XXX
+  }
+}
+
+mycity.run({
+  logo: 'http/logo.png',
+  cards: {
+    'travel': {
+      text: 'Public Transport',
+      icon: 'http/art/drag-transport.png',
+      background: '#eed645',
+    },
+    'green': {
+      text: 'Number of Green Spaces',
+      icon: 'http/art/drag-greenspace.png',
+      background: '#96bf31',
+    },
+    'safety': {
+      text: 'Safety',
+      icon: 'http/art/drag-safety.png',
+      background: '#5da7a8',
+    },
+    'schools': {
+      text: 'Schools',
+      icon: 'http/art/drag-schools.png',
+      background: '#db6b66',
+    }
+  },
+  handleFeatureClick: function(event, oa, lsoa, subLayer, summary, boundaries, calculateIndividualRankings) {
+    console.log(summary, boundaries);
+    popup.classed("offscreen",false);
+
+    var apiServer = "http://api.datapress.io";
+    
+    var resource_ids = {
+      "bbox"                                   : "d62ad9f3-4a5d-410b-993a-134c57ce52ee",
+      "modelled_OA_rents"                      : "c16db584-f212-439f-b735-507fe6c49955",
+      "MyLondon_traveltime_to_Bank_station_OA" : "c2e9ebc1-935b-460c-9361-293398d84fe5",
+      "MyLondon_postcode_OA"                   : "94baeb22-9d31-4332-95ab-84d4aaf72f22",
+      "MyLondon_LOAC_area_description_text_v3" : "3848d6af-bd5e-4317-8676-bbb857f773e0",
+      "MyLondon_fare_zone_OA"                  : "5ff9ce59-2a77-456a-9ecc-f8fb80660ef1",
+      "MyLondonSchoolsCatchmentv2"             : "98ec0962-af1a-49ad-ac10-47606f7794da",
+    }
+    
+    console.log('Creating promise');
+    Promise.all(
+      [
+        mycity.getFromDataStore(apiServer, 'modelled_OA_rents', 'OA11CD', oa, resource_ids),
+        mycity.getFromDataStore(apiServer, 'MyLondon_traveltime_to_Bank_station_OA', 'OA11CD', oa, resource_ids),
+        mycity.getFromDataStore(apiServer, 'MyLondon_postcode_OA', 'OA11CD', oa, resource_ids),
+        mycity.getFromDataStore(apiServer, 'MyLondon_fare_zone_OA', 'OA11CD', oa, resource_ids),
+        mycity.getFromDataStore(apiServer, 'MyLondonSchoolsCatchmentv2', 'OA11CD', oa, resource_ids),
+        mycity.getFromDataStore(apiServer, 'MyLondon_LOAC_area_description_text_v3', 'OA11CD', oa, resource_ids),
+        mycity.getFromDataStore(apiServer, 'bbox', 'oa', oa, resource_ids),
+      ]
+    ).then(function(values) {
+      var result = {}
+      result.scores = calculateIndividualRankings({
+        travel: summary[oa].travel,
+        green: summary[oa].green,
+        safety: summary[oa].safety,
+        schools: summary[oa].schools
+      });
+      result.rankLabel = {
+        travel: rankToLabel(result.scores.travel.pos, result.scores.travel.max),
+        green: rankToLabel(result.scores.green.pos, result.scores.green.max),
+        safety: rankToLabel(result.scores.safety.pos, result.scores.safety.max),
+        schools: rankToLabel(result.scores.schools.pos, result.scores.schools.max)
+      };
+      result.summary = summary[oa];
+      var keys = ['rent', 'travel', 'postcode', 'fareZone', 'schools', 'area', 'geo'];
+      for (var i=0; i<keys.length; i++) {
+        result[keys[i]] = values[i];
+      }
+      console.log(result);
+      MyCity.plugin.onReceiveData(result);
+    });
+  }
+});
