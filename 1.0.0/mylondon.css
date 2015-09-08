@@ -412,8 +412,74 @@ h1,h2,h3,h4{
   }
 }
 
+
+.btn-primary {
+  -webkit-appearance: none;
+  -webkit-user-select: none;
+  align-items: flex-start;
+  background-color: rgb(51, 122, 183);
+  background-image: none;
+  border-bottom-color: rgb(46, 109, 164);
+  border-bottom-left-radius: 3px;
+  border-bottom-right-radius: 3px;
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+  border-image-outset: 0px;
+  border-image-repeat: stretch;
+  border-image-slice: 100%;
+  border-image-source: none;
+  border-image-width: 1;
+  border-left-color: rgb(46, 109, 164);
+  border-left-style: solid;
+  border-left-width: 1px;
+  border-right-color: rgb(46, 109, 164);
+  border-right-style: solid;
+  border-right-width: 1px;
+  border-top-color: rgb(46, 109, 164);
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  box-sizing: border-box;
+  color: rgb(255, 255, 255);
+  cursor: pointer;
+  display: inline-block;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-stretch: normal;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: normal;
+  height: 30px;
+  letter-spacing: normal;
+  line-height: 18px;
+  margin-bottom: 0px;
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-top: 0px;
+  overflow-x: visible;
+  overflow-y: visible;
+  padding-bottom: 5px;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-top: 5px;
+  text-align: center;
+  text-indent: 0px;
+  text-rendering: auto;
+  text-shadow: none;
+  text-transform: none;
+  touch-action: manipulation;
+  vertical-align: middle;
+  white-space: nowrap;
+  width: 56px;
+  word-spacing: 0px;
+  writing-mode: lr-tb;
+}
+
 .help {
   position: fixed;
+  font-family: 'Helvetica Neue', Helvetica, sans-serif;
+  font-size: 12px;
   background: rgba(0,0,0,0.8);
   color: #fff;
   padding: 20px;
@@ -427,7 +493,7 @@ h1,h2,h3,h4{
   }
 }
 @media(max-width: 450px) {
-  #sidebar.slide-in {
+  .settings.slide-in {
     left: 50%;
     margin-left: -148px;
   }
@@ -535,6 +601,10 @@ h1,h2,h3,h4{
 #sidebar .mycity-slider-text {
   color: #96bf31;
   margin-bottom: 8px;
+}
+
+#sidebar .mycity-slider {
+  height: 68px;
 }
 
 .slider-handle {

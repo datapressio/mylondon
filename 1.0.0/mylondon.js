@@ -1,4 +1,3 @@
-
 function addHelp1() {
   var help1 = d3.select("body")
       .append("div")
@@ -75,7 +74,7 @@ function scoreForWord(word) {
   }
 }
 
-window.MyCity = {
+window.MyLondon = {
 
     schoolGraphCreate: function(parent_node) {
       var width = 120, 
@@ -365,11 +364,11 @@ window.MyCity = {
           d3.select('.help2').remove();
             popup.select('.box-rent h3').html("<span class=\"color\">"+data.postcode.PC_DIST+":</span> Cost Per Month");
             // d3.selectAll(".box .loading").transition().style("opacity","0").each("end", function() { d3.selectAll(".box .loading").remove(); });
-            MyCity.rentGraphUpdate(data);
-            MyCity.schoolGraphUpdate(data);
-            MyCity.transportGraphUpdate(data);
-            MyCity.greenSpaceGraphUpdate(data);
-            MyCity.safetyGraphUpdate(data);
+            MyLondon.rentGraphUpdate(data);
+            MyLondon.schoolGraphUpdate(data);
+            MyLondon.transportGraphUpdate(data);
+            MyLondon.greenSpaceGraphUpdate(data);
+            MyLondon.safetyGraphUpdate(data);
             // ====
             var dataTable = "";
             dataTable += "<tr><td class=\"left\">Postcode</td><td class=\"right\">"+data.postcode.PC_DIST+"</td></tr>";
@@ -386,7 +385,7 @@ window.MyCity = {
         },
         close: function() {
             popup.classed("offscreen",true);
-            // MyCity.close();
+            MyLondon.close();
         }
     }
 };
@@ -400,7 +399,7 @@ popup.html('\
     <div class="line line-right"></div>\
     <h1 class="middle">\
       INFORMATION\
-      <a class="close-button" href="javascript:MyCity.plugin.close()">&times</a>\
+      <a class="close-button" href="javascript:MyLondon.plugin.close()">&times</a>\
     </h1>\
   </div>\
   <div class=\"box-table\">\
@@ -507,11 +506,12 @@ popup.html('\
 
 var rankToLabel = function(pos, max) {
   var rank = pos/max;
-  if (rank < 3*max/8) {
+  console.info('Rank: ', rank, 'pos: ', pos, 'max: ', max);
+  if (rank < 3/8) {
     return 'Below Average'
-  } else if (rank < 5*max/8) {
+  } else if (rank < 5/8) {
     return 'Average'
-  } else if (rank < 7*max/8) {
+  } else if (rank < 7/8) {
     return 'Above Average'
   } else {
     return 'Top 20 percent' // XXX
@@ -520,6 +520,7 @@ var rankToLabel = function(pos, max) {
 
 mycity.run({
   logo: 'http/logo.png',
+  attribution: 'Powered by <a href="http://datapress.com">DataPress</a> and <a href="https://github.com/datapressio/mycity">MyCity</a> with OpenStreetMap',
   cards: {
     'travel': {
       text: 'Public Transport',
@@ -542,7 +543,24 @@ mycity.run({
       background: '#db6b66',
     }
   },
-  handleFeatureClick: function(event, oa, lsoa, subLayer, summary, boundaries, calculateIndividualRankings) {
+  opacity: 0.4,
+
+  // tileURL: 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
+  // opacity: 0.55,
+  // colors: [
+  //     // '#f7fcf5',
+  //     '#e5f5e0',
+  //     '#c7e9c0',
+  //     '#a1d99b',
+  //     '#74c476',
+  //     '#41ab5d',
+  //     '#238b45',
+  //     '#006d2c',
+  //     '#00441b',
+  // ],
+
+  handleFeatureClick: function(event, oa, lsoa, subLayer, summary, boundaries, calculateIndividualRankings, onClose) {
+    MyLondon.close = onClose;
     console.log(summary, boundaries);
     popup.classed("offscreen",false);
 
@@ -589,7 +607,7 @@ mycity.run({
         result[keys[i]] = values[i];
       }
       console.log(result);
-      MyCity.plugin.onReceiveData(result);
+      MyLondon.plugin.onReceiveData(result);
     });
   }
 });
